@@ -6,7 +6,7 @@ int main(){
 	//Mr.park fighting!!
 	//yeah~
 	
-	//Activte Dot matrix & Keypad, we follow connection of Program 8.3
+	//Activte Dot matrix & Keypad, we follow connection of Chapter9 - step9
 	enable_dot_matrix();
 	enable_key_matrix();
 	
