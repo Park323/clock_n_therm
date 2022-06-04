@@ -7,6 +7,10 @@ void enable_keypad(void);
 
 void enable_TIM1(void);
 
+void enable_TIM2(void);
+
 void enable_TIM3(void);
+
+void print_font(u32 font, u32 matrix_col);
 
 #endif
