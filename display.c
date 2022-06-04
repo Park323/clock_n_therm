@@ -26,14 +26,14 @@ u8 font8x8[16][8]={
 	{0x7e, 0x22, 0x28, 0x38, 0x28, 0x20, 0x70, 0x00} // F
 };
 
-void print_font(u32 font, u32 matrix_col){
+void print_font(){
 	/*set DMA*/
 	/* DMA1 channel2 is connected with TIM2 */
 	RCC->AHBENR |= 1;
 	DMA1_Channel2->CCR = 0x000000B0; //MINC mode & No-PINC mode & Circular mode & memory2peripheral
 	DMA1_Channel2->CNDTR = 8;
 	DMA1_Channel2->CPAR = matrix_col;
-	DMA1_Channel2->CMAR = font;
+	DMA1_Channel2->CMAR = (u32) font8x8[current_data];
 	DMA1_Channel2->CCR |= 1;
 }
 

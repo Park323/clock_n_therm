@@ -1,6 +1,9 @@
 #ifndef DEF_HEADER    // include guard
 #define DEF_HEADER    // prevents the file from being included twice.
 
+u8 current_data;
+u32 matrix_col;
+
 void enable_dot_matrix(void);
 
 void enable_keypad(void);
