@@ -6,6 +6,8 @@ Dot matrix shows hour or temperature.
 */
 
 u32 row = 1;
+u32 k, t = 0;
+u32 i, j;
 
 u8 font8x8[16][8]={
 	{0x3c, 0x42, 0x46, 0x4a, 0x52, 0x62, 0x3c, 0x00}, // 0
@@ -25,15 +27,19 @@ u8 font8x8[16][8]={
 	{0x7e, 0x22, 0x28, 0x38, 0x28, 0x22, 0x7e, 0x00}, // E
 	{0x7e, 0x22, 0x28, 0x38, 0x28, 0x20, 0x70, 0x00} // F
 };
+// Array size can be changed. Example array.
+u8 display[8]; // array of memory acceessed by DMA.
+u8 original[8] = {0x7c, 0x22, 0x22, 0x3c, 0x22, 0x22, 0x7c, 0x00}; // Data information to display. 
+
 
 void print_font(){
 	/*set DMA*/
 	/* DMA1 channel2 is connected with TIM2 */
 	RCC->AHBENR |= 1;
 	DMA1_Channel2->CCR = 0x000000B0; //MINC mode & No-PINC mode & Circular mode & memory2peripheral
-	DMA1_Channel2->CNDTR = 8;
+	DMA1_Channel2->CNDTR = 8;				//Need to change according to size of 'display' array
 	DMA1_Channel2->CPAR = (u32) MATRIX_COL;
-	DMA1_Channel2->CMAR = (u32) font8x8[cur_data];
+	DMA1_Channel2->CMAR = (u32)	display;
 	DMA1_Channel2->CCR |= 1;
 }
 
@@ -79,7 +85,7 @@ void enable_TIM2(){
 	TIM2->CR1 |= 1<<2; //only overflow generate DMA requests
 	TIM2->CR2 = 0x00;
 	TIM2->PSC = 0x01;
-	TIM2->ARR = 0x2000;
+	TIM2->ARR = 0x2000;														//Adjustment required.
 	
 	TIM2->DIER |= 1; // enable update interrupt
 	TIM2->DIER |= 1 << 8; //enable DMA requests
@@ -90,11 +96,30 @@ void enable_TIM2(){
 }
 
 
-void TIM2_IRQHandler(void){
-	if((TIM2->SR & 0x0001) != 0){
-		GPIOB->ODR = (~row)<<8;
-		row = row<<1;
-		if (row==0x100) {row=1;}
-		TIM2->SR &= ~(1<<0);
+void TIM2_IRQHandler (void){
+	if ((TIM2->SR & 0x0001) != 0){
+		if (t == 1000) {													//'Display array' is scrolled 1 bit per 1000 interrupt.
+			t=0;
+			j = sizeof(display);
+			if(k<8) {
+				for(i=0; i<(j-1); i++) {
+					display[i] = original[i] >> 8-k;		//for start from right edge
+				}
+			}
+			else {
+				for(i=0; i<(j-1); i++) {
+					display[i] = original[i] << k-8;		//scroll to left
+				}
+			}
+		k++;
+		if(k==(j*2)) {
+			k=0;																		//scroll init
+		}
+	}
+				GPIOB->ODR = (~row)<<8;
+					row = row<<1;
+					if (row == 0x100) {row =1; }
+			t++;
+		TIM2->SR &= ~(1<<0); // clear UIF
 	}
 }
