@@ -27,10 +27,10 @@ u8 font8x8[16][8]={
 	{0x7e, 0x22, 0x28, 0x38, 0x28, 0x22, 0x7e, 0x00}, // E
 	{0x7e, 0x22, 0x28, 0x38, 0x28, 0x20, 0x70, 0x00} // F
 };
-// Array size can be changed. Example array.
-u8 display[8]; // array of memory acceessed by DMA.
-u8 original[8] = {0x7c, 0x22, 0x22, 0x3c, 0x22, 0x22, 0x7c, 0x00}; // Data information to display. 
 
+// Array size can be changed. Example array.
+u16 display[8]; // array of memory acceessed by DMA.
+uint64_t original[8] = {0x3c103c3c087e, 0x423042421840, 0x46500202287c, 0x4a100c1c4802, 0x52103002fe02, 0x621042420842, 0x3c7c7e3c1c3c, 0x000000000000 }; // Data information to display. 
 
 void print_font(){
 	/*set DMA*/
@@ -100,15 +100,15 @@ void TIM2_IRQHandler (void){
 	if ((TIM2->SR & 0x0001) != 0){
 		if (t == 1000) {													//'Display array' is scrolled 1 bit per 1000 interrupt.
 			t=0;
-			j = sizeof(display);
-			if(k<8) {
-				for(i=0; i<(j-1); i++) {
-					display[i] = original[i] >> 8-k;		//for start from right edge
+			j = sizeof(original);
+			if(k<j) {
+				for(i=0; i<8; i++) {
+					display[i] = original[i] >> j-k;		//for start from right edge
 				}
 			}
 			else {
-				for(i=0; i<(j-1); i++) {
-					display[i] = original[i] << k-8;		//scroll to left
+				for(i=0; i<8; i++) {
+					display[i] = original[i] << k-j;		//scroll to left
 				}
 			}
 		k++;

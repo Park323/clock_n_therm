@@ -72,6 +72,8 @@ void TIM3_IRQHandler (void){
 			for (j=0; j<4; j++){
 				if ((key_col & col_scan ) == 0){
 					cur_data = key_index;
+				}
+				if(cur_data == 0) {
 					print_font();
 				}
 				col_scan = col_scan << 1;
