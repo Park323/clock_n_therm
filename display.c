@@ -32,8 +32,8 @@ void print_font(){
 	RCC->AHBENR |= 1;
 	DMA1_Channel2->CCR = 0x000000B0; //MINC mode & No-PINC mode & Circular mode & memory2peripheral
 	DMA1_Channel2->CNDTR = 8;
-	DMA1_Channel2->CPAR = matrix_col;
-	DMA1_Channel2->CMAR = (u32) font8x8[current_data];
+	DMA1_Channel2->CPAR = (u32) MATRIX_COL;
+	DMA1_Channel2->CMAR = (u32) font8x8[cur_data];
 	DMA1_Channel2->CCR |= 1;
 }
 

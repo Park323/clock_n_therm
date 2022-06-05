@@ -70,8 +70,10 @@ void TIM3_IRQHandler (void){
 			key_col = (key_col >> 8) & 0x0F;
 			col_scan = 0x01;
 			for (j=0; j<4; j++){
-				if ((key_col & col_scan ) == 0)
-					current_data = key_index;
+				if ((key_col & col_scan ) == 0){
+					cur_data = key_index;
+					print_font();
+				}
 				col_scan = col_scan << 1;
 				key_index = key_index + 1;
 			}
