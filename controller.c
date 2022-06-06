@@ -6,9 +6,11 @@ Keypad controls the display and operate mode
 Make it do not wait for input, we may use EXTI... refer to chapter 8 - discussion 4
 */
 
+extern clk_tmp;
+extern h24_mode;
+
 u8 key_index;
-u32 row, col, i, j;
-u32 k=0;
+u32 row, col, i_c, j_c;
 u32 key_row, key_col, col_scan;
 
 
@@ -66,24 +68,83 @@ void TIM3_IRQHandler (void){
 		key_index=0;
 		for (key_row=0x01;key_row<0x10;key_row=key_row<<1){
 			GPIOC->BSRR = (~(key_row << 8) & 0x0F00) | (key_row << 24);
-			for (j=0; j<1000; j++) {}
+			for (j_c=0; j_c<1000; j_c++) {}
 			key_col = GPIOA->IDR;
 			key_col = (key_col >> 8) & 0x0F;
 			col_scan = 0x01;
-			for (j=0; j<4; j++){
+			for (j_c=0; j_c<4; j_c++){
 				if ((key_col & col_scan ) == 0){
-					cur_data = key_index;
-				}
-				if(cur_data == 0) {
-					if (k==0) {
-						tmp2data ();
-						clk2data_off();
-						k=1;
-					}
-					if (k==1) {
-						clk2data ();
-						tmp2data_off();
-						k=0;
+					/* if key detected */
+					switch(key_index){
+						case 0:
+							/* switch clock & temperature mode */
+							if (clk_tmp!=0){
+								clk_tmp = 0;
+								tmp2data();
+							}
+							else{
+								tmp2data_off();
+								clk_tmp = 1;
+							}
+							break;
+						case 8:
+							/* switch 12/24 or C/F */
+							if (clk_tmp!=0){
+								if (h24_mode != 0) h24_mode = 0;
+								else h24_mode = 1;
+							}
+							else{
+								//YJ's turn~~
+							}
+							break;
+						case 1:
+							/* Hour ++ */
+							updown_clock(1<<4);
+							break;
+						case 3:
+							/* Hour -- */
+							updown_clock(1<<5);
+							break;
+						case 5:
+							/* Minute ++ */
+							updown_clock(1<<2);
+							break;
+						case 7:
+							/* Minute -- */
+							updown_clock(1<<3);
+							break;
+						case 9:
+							/* Second ++ */
+							updown_clock(1<<0);
+							break;
+						case 11:
+							/* Second -- */
+							updown_clock(1<<1);
+							break;
+						case 12:
+							/* Reserved for scrolling */
+							break;
+						case 13:
+							/* Reserved for scrolling */
+							break;
+						case 14:
+							/* Reserved for scrolling */
+							break;
+						case 15:
+							/* Reserved for scrolling */
+							break;
+						case 2:
+							/* Reserved */
+							break;
+						case 4:
+							/* Reserved */
+							break;
+						case 6:
+							/* Reserved */
+							break;
+						case 10:
+							/* Reserved */
+							break;
 					}
 				}
 				col_scan = col_scan << 1;

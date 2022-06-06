@@ -1,9 +1,13 @@
 #include <stm32f10x.h>
 #include "prj.h"
 
+extern u8** font8x8;
+extern u8 rawdata[];
+
 u16 cur_TMP;
-u16 temp_cel, temp_cel_10, temp_cel_1;
 u32 i;
+
+u16 temp_cel, temp_cel_10, temp_cel_1;
 
 void enable_TMP(){
 	/*
@@ -57,6 +61,7 @@ void tmp2data() {						//use TIM4. TIM4 causes update interrupt. cur_TMP is conv
 void tmp2data_off() {
 	TIM4->CR1 &= ~(1<<0);			//TIM4 disabled.
 }
+
 
 void TIM4_IRQHandler (void){
 	if ((TIM4->SR & 0x0001) != 0){

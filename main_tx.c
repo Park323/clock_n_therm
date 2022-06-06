@@ -1,8 +1,6 @@
 #include <stm32f10x.h>
 #include "prj.h"
 
-u8 current_data = 0;
-u32 matrix_col = 0x40000000; // This address should be revised.
 
 int main(){
 	//Mr.kim fighting!!
@@ -12,10 +10,10 @@ int main(){
 	//Activte Dot matrix & Keypad, we follow connection of Chapter9 - step9
 	enable_dot_matrix();
 	enable_keypad();
-	enable_TMP();
 	enable_clk();
+	enable_TMP();
 	
-	print_font();
+	activate_display();
 	
 	/* Loop waiting for interrupt */
 	while(1){ __WFI(); }

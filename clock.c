@@ -7,26 +7,20 @@ Our clock use Real-time clock(RTC)
 It's independent timer.
 */
 
+extern u8** font8x8;
+extern u8 rawdata[];
+
 u8 hour=12, min=0, sec=0;
-u8 clk_flag = 0;
+
+u8 clk_tmp = 1; // 1 if clock mode else 0
+u8 h24_mode = 1; // 1 if 24 mode else 0
 u8 config_mode = 0;
-u8 h24_mode = 1;
 u8 show = 1;
 
 void set_time(void);
 void enter_clk_config(void);
 void exit_clk_config(void);
 void display_hhmmss(u8 hh, u8 mm, u8 ss);
-
-
-void display_clock_on(void){
-	clk_flag = 1;
-}
-
-
-void display_clock_off(void){
-	clk_flag = 0;
-}
 
 
 void updown_clock(u8 command){
@@ -64,16 +58,6 @@ void updown_clock(u8 command){
 			if (hour==0) hour = 24;
 			--hour;
 			break;
-	}
-}
-
-
-void switch_12_24(void){
-	if (h24_mode == 0){
-		h24_mode = 1;
-	}
-	else {
-		h24_mode = 0;
 	}
 }
 
@@ -161,10 +145,11 @@ void RTC_IRQHandler(void){
 		}
 		else{
 			/* set hour, min, sec */
-			show = ~show;
+			if (show != 0) show = 0;
+			else show = 1;
 		}
 	}
-	if (clk_flag != 0 && show != 0){
+	if (clk_tmp != 0 && show != 0){
 		if (h24_mode != 0){
 			display_hhmmss(hour, min, sec);
 		}
