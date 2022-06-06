@@ -24,6 +24,10 @@ void print_font();
 
 void tmp2data();
 
+void tmp2data_off();
+
 void clk2data ();
+
+void clk2data_off ();
 
 #endif
