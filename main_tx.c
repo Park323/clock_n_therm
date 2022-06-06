@@ -13,6 +13,7 @@ int main(){
 	enable_dot_matrix();
 	enable_keypad();
 	enable_TMP();
+	enable_clk();
 	
 	print_font();
 	
