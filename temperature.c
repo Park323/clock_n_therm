@@ -34,3 +34,9 @@ void enable_TMP(){
 	ADC1->CR2 |= 1;
 	ADC1->CR2 |= 1 << 22; //SWSTART
 }
+
+void tmp2data() {
+}
+
+void tmp2data_off() {
+	TIM3->CR1 |= 0x0001;

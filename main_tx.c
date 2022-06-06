@@ -14,6 +14,8 @@ int main(){
 	enable_keypad();
 	enable_TMP();
 	
+	print_font();
+	
 	/* Loop waiting for interrupt */
 	while(1){ __WFI(); }
 }

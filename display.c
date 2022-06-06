@@ -29,8 +29,7 @@ u8 font8x8[16][8]={
 };
 
 // Array size can be changed. Example array.
-u16 display[8]; // array of memory acceessed by DMA.
-uint64_t original[8] = {0x3c103c3c087e, 0x423042421840, 0x46500202287c, 0x4a100c1c4802, 0x52103002fe02, 0x621042420842, 0x3c7c7e3c1c3c, 0x000000000000 }; // Data information to display. 
+u16 display[8]; // array of memory acceessed by DMA.  
 
 void print_font(){
 	/*set DMA*/
@@ -79,7 +78,7 @@ void enable_TIM2(){
 	/* enable TIM2 */
 	/* TIM2 is used for printing dot matrix */
 	/* TIM2 uses DMA1_channel2 */
-	RCC->APB2ENR |= 1 << 11; //enable TIM1
+	RCC->APB2ENR |= 1 << 11; //enable TIM1											//TIM1? not TIM2?
 	
 	TIM2->CR1 = 0x00;
 	TIM2->CR1 |= 1<<2; //only overflow generate DMA requests
@@ -100,15 +99,15 @@ void TIM2_IRQHandler (void){
 	if ((TIM2->SR & 0x0001) != 0){
 		if (t == 1000) {													//'Display array' is scrolled 1 bit per 1000 interrupt.
 			t=0;
-			j = sizeof(original);
+			j = sizeof(rawdata);
 			if(k<j) {
 				for(i=0; i<8; i++) {
-					display[i] = original[i] >> j-k;		//for start from right edge
+					display[i] = rawdata[i] >> j-k;		//for start from right edge
 				}
 			}
 			else {
 				for(i=0; i<8; i++) {
-					display[i] = original[i] << k-j;		//scroll to left
+					display[i] = rawdata[i] << k-j;		//scroll to left
 				}
 			}
 		k++;

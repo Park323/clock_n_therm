@@ -8,6 +8,7 @@ Make it do not wait for input, we may use EXTI... refer to chapter 8 - discussio
 
 u8 key_index;
 u32 row, col, i, j;
+u32 k=0;
 u32 key_row, key_col, col_scan;
 
 
@@ -74,7 +75,16 @@ void TIM3_IRQHandler (void){
 					cur_data = key_index;
 				}
 				if(cur_data == 0) {
-					print_font();
+					if (k==0) {
+						tmp2data ();
+						clk2data_off();
+						k=1;
+					}
+					if (k==1) {
+						clk2data ();
+						tmp2data_off();
+						k=0;
+					}
 				}
 				col_scan = col_scan << 1;
 				key_index = key_index + 1;
