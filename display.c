@@ -5,11 +5,12 @@
 Dot matrix shows hour or temperature.
 */
 
-int i_d,j_d;
-u8 k=0;
-u32 t=0;
+int i_d;
+u8 base=0;
+u32 update_counter=0;
+u8 display_length = 8;
 u32 display_row = 1;
-u32 scroll_mode;
+u8 scroll_mode=0;
 
 // Data information to display. 
 u8 font8x8[16][8]={
@@ -40,11 +41,13 @@ uint64_t rawdata[8] = {
 	0x3c7c7e3c1c3c, 
 	0x000000000000 
 };
+u8 seq_length = sizeof(rawdata);
 
 uint64_t vertical_data[24];// Data information to display. 
 
 // Array size can be changed. Example array.
-u16 display[8]; // array of memory acceessed by DMA.  
+u8 display[8]; // array of memory acceessed by DMA.  
+
 
 void activate_display(){
 	/*set DMA*/
@@ -55,6 +58,37 @@ void activate_display(){
 	DMA1_Channel2->CPAR = (u32) MATRIX_COL;
 	DMA1_Channel2->CMAR = (u32)	display;
 	DMA1_Channel2->CCR |= 1;
+}
+
+
+void display_hhmmss(u8 hh, u8 mm, u8 ss){
+	/* ":" should be added */
+	for(u8 i=0; i<8; i++) {
+		rawdata[i] = 0;
+		rawdata[i] += ((uint64_t)font8x8[hh/10][i]<<40)+((uint64_t)font8x8[hh%10][i]<<32); //hh
+		rawdata[i] += ((uint64_t)font8x8[mm/10][i]<<12)+((uint64_t)font8x8[mm%10][i]<<8); //mm
+		rawdata[i] += ((uint64_t)font8x8[ss/10][i]<<4)+((uint64_t)font8x8[ss%10][i]<<0); //ss
+	}
+}
+
+
+void switch_scrolling(u8 index){
+	scroll_mode = index;
+}
+
+
+void horizon2vertical(void) {
+	for(i_d=0; i_d<24; i_d++) {
+		if(i_d<8) {
+			vertical_data[i_d] = rawdata[i_d] >> (8*4);
+		}
+		else if(i_d>15) {
+			vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
+		}
+		else {
+			vertical_data[i_d] = (rawdata[i_d-8] >> (4*4)) & 0x0000FFFF;
+		}
+	}
 }
 
 
@@ -93,13 +127,13 @@ void enable_TIM2(){
 	/* enable TIM2 */
 	/* TIM2 is used for printing dot matrix */
 	/* TIM2 uses DMA1_channel2 */
-	RCC->APB2ENR |= 1 << 11; //enable TIM1											//TIM1? not TIM2?
+	RCC->APB1ENR |= 1; //enable TIM2
 	
 	TIM2->CR1 = 0x00;
 	TIM2->CR1 |= 1<<2; //only overflow generate DMA requests
 	TIM2->CR2 = 0x00;
-	TIM2->PSC = 0x01;
-	TIM2->ARR = 0x2000;														//Adjustment required.
+	TIM2->PSC = 0x05;
+	TIM2->ARR = 0x2000;
 	
 	TIM2->DIER |= 1; // enable update interrupt
 	TIM2->DIER |= 1 << 8; //enable DMA requests
@@ -112,96 +146,58 @@ void enable_TIM2(){
 
 void TIM2_IRQHandler (void){
 	if ((TIM2->SR & 0x0001) != 0){
-		if (t == 100) {													//'Display array' is scrolled 1 bit per 100 interrupt.
-			t=0;
-		//horizontal_left mode
-		if(scroll_mode == 0) {
-				j_d = sizeof(rawdata);
-				if(k<j_d) {
-					for(i_d=0; i_d<8; i_d++) {
-						display[i_d] = rawdata[i_d] >> j_d-k;		//for start from right edge
+		if (update_counter++ == 100) {													//'Display array' is scrolled 1 bit per 100 interrupt.
+			update_counter = 0;
+			switch (scroll_mode){
+				case 0 :
+					//horizontal_left mode
+					for(i_d=0; i_d<8; i_d++){
+						if(seq_length > base) display[i_d] = (u8)(rawdata[i_d] >> (seq_length - base));		//for start from right edge
+						else 									display[i_d] = (u8)(rawdata[i_d] << (base - seq_length));
 					}
-				}
-				else {
-					for(i_d=0; i_d<8; i_d++) {
-						display[i_d] = rawdata[i_d] << k-j_d;		//scroll to left
+					if(++base==(seq_length + display_length*2)) base=0; //scroll init
+					break;
+				case 1 :
+					//horizontal_right mode
+					for(i_d=0; i_d<8; i_d++){
+						if(display_length > base) display[i_d] = (u8)(rawdata[i_d] << (display_length - base));		//for start from right edge
+						else 											display[i_d] = (u8)(rawdata[i_d] >> (base - display_length));
 					}
-				}
-			k++;
-			if(k==(j_d*2)) {
-				k=0;																		//scroll init
+					if(++base==(seq_length + display_length*2)) base=0; //scroll init
+					break;
+				case 2 :
+					//vertical up mode
+					horizon2vertical();
+					for(i_d=0; i_d<8; i_d++) {
+						if (i_d+base-7<0 || i_d+base-7>23){
+							display[i_d] = 0;
+						}
+						else {
+						display[i_d] = vertical_data[i_d+base-7];
+						}
+					}
+					base++;
+					if (base==30) base=0;
+					break;
+				case 3 :
+					//vertical down mode
+					horizon2vertical();
+					for(i_d=0; i_d<8; i_d++) {
+						if (23+i_d-base<0 || 23+i_d-base>23){
+							display[i_d] = 0;
+						}
+						else {
+						display[i_d] = vertical_data[23+i_d-base];
+						}
+					}
+					base++;
+					if (base==30) base=0;
+					break;
 			}
 		}
-		
-		//horizontal_right mode
-		if(scroll_mode == 1) {
-				j_d = sizeof(rawdata);
-				if(k<j_d) {
-					for(i_d=0; i_d<8; i_d++) {
-						display[i_d] = rawdata[i_d] << j_d-k;		//for start from left edge
-					}
-				}
-				else {
-					for(i_d=0; i_d<8; i_d++) {
-						display[i_d] = rawdata[i_d] >> k-j_d;		//scroll to right
-					}
-				}
-			k++;
-			if(k==(j_d*2)) {
-				k=0;
-			}
-		}
-		//vertical up mode
-		if(scroll_mode == 2) {
-				horizon2vertical();
-				for(i_d=0; i_d<8; i_d++) {
-					if (i_d+j_d-7<0 || i_d+j_d-7>23){
-						display[i_d] = 0;
-					}
-					else {
-					display[i_d] = vertical_data[i_d+j_d-7];
-					}
-				}
-				j_d++;
-				if (j_d==30) {
-					j_d=0;
-				}
-		}
-		//vertical down mode
-		if(scroll_mode == 3) {
-				horizon2vertical();
-				for(i_d=0; i_d<8; i_d++) {
-					if (23+i_d-j_d<0 || 23+i_d-j_d>23){
-						display[i_d] = 0;
-					}
-					else {
-					display[i_d] = vertical_data[23+i_d-j_d];
-					}
-				}
-				j_d++;
-				if (j_d==30) {
-					j_d=0;
-				}
-		}
-	}
 		GPIOB->ODR = (~display_row)<<8;
 		display_row = display_row<<1;
-		if (display_row == 0x100) {display_row =1; }
-			t++;
+		if (display_row == 0x100) display_row =1;
 		TIM2->SR &= ~(1<<0); // clear UIF
-	}
-}
-
-void horizon2vertical(void) {
-	for(i_d=0; i_d<24; i_d++) {
-		if(i_d<8) {
-			vertical_data[i_d] = rawdata[i_d] >> (8*4);
-		}
-		else if(i_d>15) {
-			vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
-		}
-		else {
-			vertical_data[i_d] = (rawdata[i_d-8] >> (4*4)) & 0x0000FFFF;
-		}
 	}
 }

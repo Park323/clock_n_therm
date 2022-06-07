@@ -20,6 +20,7 @@ void enable_TIM3(void);
 void activate_display(void);
 void display_hhmmss(u8 hh, u8 mm, u8 ss);
 void horizon2vertical(void);
+void switch_scrolling(u8 index);
 
 // control
 void tmp2data(void);

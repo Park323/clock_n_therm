@@ -7,9 +7,6 @@ Our clock use Real-time clock(RTC)
 It's independent timer.
 */
 
-extern u8** font8x8;
-extern u8 rawdata[];
-
 u8 hour=12, min=0, sec=0;
 
 u8 clk_tmp = 1; // 1 if clock mode else 0
@@ -66,14 +63,14 @@ void enable_clk(){
 	/*initialize real time clock*/
 	RCC->APB1ENR |= 3 << 27; //enable power and backup
 	PWR->CR |= 1 << 8; //enable access to RTC
-	RCC->BDCR |= 1 << 15;
 	RCC->BDCR |= 1 << 8; // RTC clock source : LSE(2_01) 
 	RCC->BDCR |= 1;	// LSE ON
 	
-	//interrupt enable
-	NVIC->ISER[0] |= 1 << 3; //RTC global interrupt
-	
 	switch_clk_config();
+	
+	//RTC and interrupt enable
+	RCC->BDCR |= 1 << 15;
+	NVIC->ISER[0] |= 1 << 3; //RTC global interrupt
 }
 
 
@@ -114,17 +111,6 @@ void exit_clk_config(void){
 }
 
 
-void display_hhmmss(u8 hh, u8 mm, u8 ss){
-	/* ":" should be added */
-	for(u8 i=0; i<8; i++) {
-		rawdata[i] = 0;
-		rawdata[i] += ((uint64_t)font8x8[hh/10][i]<<40)+((uint64_t)font8x8[hh%10][i]<<32); //hh
-		rawdata[i] += ((uint64_t)font8x8[mm/10][i]<<12)+((uint64_t)font8x8[mm%10][i]<<8); //mm
-		rawdata[i] += ((uint64_t)font8x8[ss/10][i]<<4)+((uint64_t)font8x8[ss%10][i]<<0); //ss
-	}
-}
-
-
 void RTC_IRQHandler(void){
 	if ((RTC->CRL & 1)!=0){
 		if (config_mode == 0){
@@ -149,12 +135,12 @@ void RTC_IRQHandler(void){
 			else show = 1;
 		}
 	}
-	if (clk_tmp != 0 && show != 0){
+	if ((clk_tmp != 0) && (show != 0)){
 		if (h24_mode != 0){
 			display_hhmmss(hour, min, sec);
 		}
 		else{
-			display_hhmmss(hour/12, min, sec);
+			display_hhmmss(hour%12, min, sec);
 		}
 	}
 }

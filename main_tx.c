@@ -11,10 +11,10 @@ int main(){
 	enable_dot_matrix();
 	enable_keypad();
 	enable_clk();
-	enable_TMP();
+	//enable_TMP();
 	
 	activate_display();
 	
 	/* Loop waiting for interrupt */
-	while(1){ __WFI(); }
+	while(1){  }
 }

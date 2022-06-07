@@ -6,10 +6,9 @@ Keypad controls the display and operate mode
 Make it do not wait for input, we may use EXTI... refer to chapter 8 - discussion 4
 */
 
-extern clk_tmp;
-extern h24_mode;
-extern scroll_mode;
-extern temp_mode;
+extern u8 clk_tmp;
+extern u8 h24_mode;
+extern u32 temp_mode;
 
 u8 key_index;
 u32 row, col, i_c, j_c;
@@ -125,16 +124,16 @@ void TIM3_IRQHandler (void){
 							updown_clock(1<<1);
 							break;
 						case 12:
-							scroll_mode = 0;
+							switch_scrolling(0);
 							break;
 						case 13:
-							scroll_mode = 1;
+							switch_scrolling(1);
 							break;
 						case 14:
-							scroll_mode = 2;
+							switch_scrolling(2);
 							break;
 						case 15:
-							scroll_mode = 3;
+							switch_scrolling(3);
 							break;
 						case 2:
 							/* Reserved */
