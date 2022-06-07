@@ -9,6 +9,7 @@ int i_d,j_d;
 u8 k=0;
 u32 t=0;
 u32 display_row = 1;
+u32 scroll_mode;
 
 // Data information to display. 
 u8 font8x8[16][8]={
@@ -39,6 +40,8 @@ uint64_t rawdata[8] = {
 	0x3c7c7e3c1c3c, 
 	0x000000000000 
 };
+
+uint64_t vertical_data[24];// Data information to display. 
 
 // Array size can be changed. Example array.
 u16 display[8]; // array of memory acceessed by DMA.  
@@ -109,28 +112,96 @@ void enable_TIM2(){
 
 void TIM2_IRQHandler (void){
 	if ((TIM2->SR & 0x0001) != 0){
-		if (t == 1000) {													//'Display array' is scrolled 1 bit per 1000 interrupt.
+		if (t == 100) {													//'Display array' is scrolled 1 bit per 100 interrupt.
 			t=0;
-			j_d = sizeof(rawdata);
-			if(k<j_d) {
-				for(i_d=0; i_d<8; i_d++) {
-					display[i_d] = rawdata[i_d] >> j_d-k;		//for start from right edge
+		//horizontal_left mode
+		if(scroll_mode == 0) {
+				j_d = sizeof(rawdata);
+				if(k<j_d) {
+					for(i_d=0; i_d<8; i_d++) {
+						display[i_d] = rawdata[i_d] >> j_d-k;		//for start from right edge
+					}
 				}
-			}
-			else {
-				for(i_d=0; i_d<8; i_d++) {
-					display[i_d] = rawdata[i_d] << k-j_d;		//scroll to left
+				else {
+					for(i_d=0; i_d<8; i_d++) {
+						display[i_d] = rawdata[i_d] << k-j_d;		//scroll to left
+					}
 				}
+			k++;
+			if(k==(j_d*2)) {
+				k=0;																		//scroll init
 			}
-		k++;
-		if(k==(j_d*2)) {
-			k=0;																		//scroll init
+		}
+		
+		//horizontal_right mode
+		if(scroll_mode == 1) {
+				j_d = sizeof(rawdata);
+				if(k<j_d) {
+					for(i_d=0; i_d<8; i_d++) {
+						display[i_d] = rawdata[i_d] << j_d-k;		//for start from left edge
+					}
+				}
+				else {
+					for(i_d=0; i_d<8; i_d++) {
+						display[i_d] = rawdata[i_d] >> k-j_d;		//scroll to right
+					}
+				}
+			k++;
+			if(k==(j_d*2)) {
+				k=0;
+			}
+		}
+		//vertical up mode
+		if(scroll_mode == 2) {
+				horizon2vertical();
+				for(i_d=0; i_d<8; i_d++) {
+					if (i_d+j_d-7<0 || i_d+j_d-7>23){
+						display[i_d] = 0;
+					}
+					else {
+					display[i_d] = vertical_data[i_d+j_d-7];
+					}
+				}
+				j_d++;
+				if (j_d==30) {
+					j_d=0;
+				}
+		}
+		//vertical down mode
+		if(scroll_mode == 3) {
+				horizon2vertical();
+				for(i_d=0; i_d<8; i_d++) {
+					if (23+i_d-j_d<0 || 23+i_d-j_d>23){
+						display[i_d] = 0;
+					}
+					else {
+					display[i_d] = vertical_data[23+i_d-j_d];
+					}
+				}
+				j_d++;
+				if (j_d==30) {
+					j_d=0;
+				}
 		}
 	}
-				GPIOB->ODR = (~display_row)<<8;
-					display_row = display_row<<1;
-					if (display_row == 0x100) {display_row =1; }
+		GPIOB->ODR = (~display_row)<<8;
+		display_row = display_row<<1;
+		if (display_row == 0x100) {display_row =1; }
 			t++;
 		TIM2->SR &= ~(1<<0); // clear UIF
+	}
+}
+
+void horizon2vertical(void) {
+	for(i_d=0; i_d<24; i_d++) {
+		if(i_d<8) {
+			vertical_data[i_d] = rawdata[i_d] >> (8*4);
+		}
+		else if(i_d>15) {
+			vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
+		}
+		else {
+			vertical_data[i_d] = (rawdata[i_d-8] >> (4*4)) & 0x0000FFFF;
+		}
 	}
 }

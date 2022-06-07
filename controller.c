@@ -8,6 +8,8 @@ Make it do not wait for input, we may use EXTI... refer to chapter 8 - discussio
 
 extern clk_tmp;
 extern h24_mode;
+extern scroll_mode;
+extern temp_mode;
 
 u8 key_index;
 u32 row, col, i_c, j_c;
@@ -94,7 +96,8 @@ void TIM3_IRQHandler (void){
 								else h24_mode = 1;
 							}
 							else{
-								//YJ's turn~~
+								if (temp_mode != 0) temp_mode = 0;
+								else temp_mode = 1;
 							}
 							break;
 						case 1:
@@ -122,16 +125,16 @@ void TIM3_IRQHandler (void){
 							updown_clock(1<<1);
 							break;
 						case 12:
-							/* Reserved for scrolling */
+							scroll_mode = 0;
 							break;
 						case 13:
-							/* Reserved for scrolling */
+							scroll_mode = 1;
 							break;
 						case 14:
-							/* Reserved for scrolling */
+							scroll_mode = 2;
 							break;
 						case 15:
-							/* Reserved for scrolling */
+							scroll_mode = 3;
 							break;
 						case 2:
 							/* Reserved */
