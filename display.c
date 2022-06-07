@@ -5,7 +5,7 @@
 Dot matrix shows hour or temperature.
 */
 
-u8 i_d,j_d;
+int i_d,j_d;
 u8 k=0;
 u32 t=0;
 u32 display_row = 1;
