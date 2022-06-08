@@ -19,6 +19,7 @@ void enable_TIM3(void);
 // show
 void activate_display(void);
 void display_hhmmss(u8 hh, u8 mm, u8 ss);
+void display_mnC(u8 m, u8 n, u32 temp_mode);
 void horizon2vertical(void);
 void switch_scrolling(u8 index);
 

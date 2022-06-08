@@ -5,6 +5,8 @@
 Dot matrix shows hour or temperature.
 */
 
+extern u8 clk_tmp;
+
 int i_d;
 u8 base=0;
 u32 update_counter=0;
@@ -30,6 +32,11 @@ u8 font8x8[16][8]={
 	{0x78, 0x24, 0x22, 0x22, 0x22, 0x24, 0x78, 0x00}, // D
 	{0x7e, 0x22, 0x28, 0x38, 0x28, 0x22, 0x7e, 0x00}, // E
 	{0x7e, 0x22, 0x28, 0x38, 0x28, 0x20, 0x70, 0x00} // F
+};
+u8 symbol8x8[3][8]={
+	{0x18, 0x24, 0x24, 0x18, 0x00, 0x00, 0x00, 0x00}, //degree sign
+	{0x18, 0x18, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00}, //':' sign
+	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, //' 'sign
 };
 uint64_t rawdata[8] = {
 	0x3c103c3c087e, 
@@ -65,10 +72,28 @@ void display_hhmmss(u8 hh, u8 mm, u8 ss){
 	/* ":" should be added */
 	for(u8 i=0; i<8; i++) {
 		rawdata[i] = 0;
-		rawdata[i] += ((uint64_t)font8x8[hh/10][i]<<40)+((uint64_t)font8x8[hh%10][i]<<32); //hh
-		rawdata[i] += ((uint64_t)font8x8[mm/10][i]<<12)+((uint64_t)font8x8[mm%10][i]<<8); //mm
-		rawdata[i] += ((uint64_t)font8x8[ss/10][i]<<4)+((uint64_t)font8x8[ss%10][i]<<0); //ss
+		rawdata[i] += ((uint64_t)font8x8[hh/10][i]<<56)+((uint64_t)font8x8[hh%10][i]<<48); //hh
+		rawdata[i] += ((uint64_t)symbol8x8[1][i]<<40); //':'
+		rawdata[i] += ((uint64_t)font8x8[mm/10][i]<<32)+((uint64_t)font8x8[mm%10][i]<<24); //mm
+		rawdata[i] += ((uint64_t)symbol8x8[1][i]<<16); //':'
+		rawdata[i] += ((uint64_t)font8x8[ss/10][i]<<8)+((uint64_t)font8x8[ss%10][i]<<0); //ss
 	}
+}
+
+void display_mnC (u8 m, u8 n, u32 temp_mode) {
+		for(u8 j=0; j<8; j++) {
+			rawdata[j] += (uint64_t)(font8x8[m][j]<<24);	//m
+			rawdata[j] += (uint64_t)(font8x8[n][j]<<16);		//n
+			rawdata[j] += (uint64_t)(symbol8x8[0][j]<<8);		//'
+			switch (temp_mode) {
+				case 0 :
+					rawdata[j] += ((uint64_t)font8x8[0xC][j]);	//C
+					break;
+				case 1 :
+					rawdata[j] += ((uint64_t)font8x8[0xF][j]);	//F
+				break;
+			}
+		}
 }
 
 
@@ -78,16 +103,21 @@ void switch_scrolling(u8 index){
 
 
 void horizon2vertical(void) {
-	for(i_d=0; i_d<24; i_d++) {
-		if(i_d<8) {
-			vertical_data[i_d] = rawdata[i_d] >> (8*4);
-		}
-		else if(i_d>15) {
-			vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
-		}
-		else {
-			vertical_data[i_d] = (rawdata[i_d-8] >> (4*4)) & 0x0000FFFF;
-		}
+	switch (clk_tmp) {
+		case 0 :
+			for(i_d=0; i_d<24; i_d++) {
+				if(i_d<8) 			vertical_data[i_d] = rawdata[i_d] >> 12*4;
+				else if(i_d>15) vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
+				else						vertical_data[i_d] = (rawdata[i_d-8] >> (6*4)) & 0x0000FFFF;
+			}
+			break;
+		case 1 :
+			for(i_d=0; i_d<24; i_d++) {
+				if(i_d<8) 			vertical_data[i_d] = rawdata[i_d] >> (8*4);
+				else if(i_d>15) vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
+				else 						vertical_data[i_d] = (rawdata[i_d-8] >> (4*4)) & 0x0000FFFF;
+			}
+			break;
 	}
 }
 
