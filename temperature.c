@@ -7,7 +7,7 @@ extern u8 rawdata[];
 u16 cur_TMP;
 u32 i, temp_mode;
 
-u16 temp_conv, temp_conv_10, temp_conv_1;
+u8 temp_conv, temp_conv_10, temp_conv_1;
 
 void enable_TMP(){
 	/*
@@ -65,22 +65,11 @@ void tmp2data_off() {
 
 void TIM4_IRQHandler (void){
 	if ((TIM4->SR & 0x0001) != 0){
-		//celcius mode
-		if(temp_mode == 0) {
-			temp_conv = cur_TMP;			//temp_conv = Celsius temparature. round down after devide.
-			temp_conv_10 = temp_conv/10;		//tens of celsius temp.
-			temp_conv_1 = temp_conv-(10*temp_conv_10);		//units of celsius temp.
-		}
-		//fahrenheit mode
-		else {
-			temp_conv = cur_TMP;			//temp_conv = fahrenheit temparature. round down after devide.
-			temp_conv_10 = temp_conv/10;		//tens of fahrenheit temp.
-			temp_conv_1 = temp_conv-(10*temp_conv_10);		//units of fahrenheit temp.
-		}
-		for(i=0; i<8; i++) {
-			rawdata[i] = (font8x8[temp_conv_10][i]*0x10000)+(font8x8[temp_conv_1][i]*0x100)+font8x8[0xC][i];			//nnC type
-			rawdata[i] = rawdata[i]*0x1000000 + rawdata[i];				//nnCnnC type
-		}
-	TIM4->SR &= ~(1<<0);		//clear UIF
+		temp_conv = cur_TMP;//temp_conv = Celsius temparature. round down after devide.
+		if(temp_mode == 1) temp_conv = temp_conv*1.8+32;	//farenhiet conversion
+		temp_conv_10 = temp_conv/10;		//tens of temp.
+		temp_conv_1 = temp_conv%10;		//units of temp.
+		display_mnC (temp_conv_10, temp_conv_1, temp_mode);
+		TIM4->SR &= ~(1<<0);		//clear UIF
 	}
 }
