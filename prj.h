@@ -18,7 +18,7 @@ void enable_TIM3(void);
 
 // show
 void activate_display(void);
-void display_hhmmss(u8 hh, u8 mm, u8 ss);
+void display_hhmmss(u8 hh, u8 mm, u8 ss, u8 show);
 void display_mnC(u8 m, u8 n, u32 temp_mode);
 void horizon2vertical(void);
 void switch_scrolling(u8 index);
@@ -27,7 +27,9 @@ void switch_scrolling(u8 index);
 void scan_button(void);
 void tmp2data(void);
 void tmp2data_off(void);
+void switch_clk(void);
 void switch_clk_config(void);
+void switch_h24(void);
 void updown_clock(u8 command);
 
 #endif

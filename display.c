@@ -5,7 +5,7 @@
 Dot matrix shows hour or temperature.
 */
 
-extern u8 clk_tmp;
+extern u8 CLKEN;
 
 int i_d;
 u8 base=0;
@@ -68,15 +68,16 @@ void activate_display(){
 }
 
 
-void display_hhmmss(u8 hh, u8 mm, u8 ss){
-	/* ":" should be added */
+void display_hhmmss(u8 hh, u8 mm, u8 ss, u8 show){
 	for(u8 i=0; i<8; i++) {
 		rawdata[i] = 0;
-		rawdata[i] += ((uint64_t)font8x8[hh/10][i]<<56)+((uint64_t)font8x8[hh%10][i]<<48); //hh
-		rawdata[i] += ((uint64_t)symbol8x8[1][i]<<40); //':'
-		rawdata[i] += ((uint64_t)font8x8[mm/10][i]<<32)+((uint64_t)font8x8[mm%10][i]<<24); //mm
-		rawdata[i] += ((uint64_t)symbol8x8[1][i]<<16); //':'
-		rawdata[i] += ((uint64_t)font8x8[ss/10][i]<<8)+((uint64_t)font8x8[ss%10][i]<<0); //ss
+		if (show!=0){
+			rawdata[i] += ((uint64_t)font8x8[hh/10][i]<<56)+((uint64_t)font8x8[hh%10][i]<<48); //hh
+			rawdata[i] += ((uint64_t)symbol8x8[1][i]<<40); //':'
+			rawdata[i] += ((uint64_t)font8x8[mm/10][i]<<32)+((uint64_t)font8x8[mm%10][i]<<24); //mm
+			rawdata[i] += ((uint64_t)symbol8x8[1][i]<<16); //':'
+			rawdata[i] += ((uint64_t)font8x8[ss/10][i]<<8)+((uint64_t)font8x8[ss%10][i]<<0); //ss
+		}
 	}
 }
 
@@ -104,7 +105,7 @@ void switch_scrolling(u8 index){
 
 
 void horizon2vertical(void) {
-	switch (clk_tmp) {
+	switch (CLKEN) {
 		case 1 :
 			for(i_d=0; i_d<24; i_d++) {
 				if(i_d<8) 			vertical_data[i_d] = rawdata[i_d] >> 12*4;

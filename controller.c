@@ -6,8 +6,8 @@ Keypad controls the display and operate mode
 Make it do not wait for input, we may use EXTI... refer to chapter 8 - discussion 4
 */
 
-extern u8 clk_tmp;
-extern u8 h24_mode;
+extern u8 CLKEN;
+extern u8 H24;
 extern u32 temp_mode;
 
 u8 key_index;
@@ -62,27 +62,21 @@ void scan_button(){
 			if ((key_col & col_scan ) == 0){
 				// if key detected 
 				switch(key_index){
+					// S0 : CLK/TMP mode 
 					case 0:
-						// switch clock & temperature mode 
-						if (clk_tmp!=0){
-							clk_tmp = 0;
-							tmp2data();
-						}
-						else{
-							tmp2data_off();
-							clk_tmp = 1;
-						}
+						switch_clk();
+						//if (CLKEN!=0) tmp2data_off();
+						//else tmp2data();
 						break;
 					case 8:
 						//switch 12/24 or C/F
-						if (clk_tmp!=0){
-							if (h24_mode != 0) h24_mode = 0;
-							else h24_mode = 1;
+						if (CLKEN!=0){
+							switch_h24();
 						}
-						else{
-							if (temp_mode != 0) temp_mode = 0;
-							else temp_mode = 1;
-						}
+						//else{
+						//	if (temp_mode != 0) temp_mode = 0;
+						//	else temp_mode = 1;
+						//}
 						break;
 					case 1:
 						//Hour ++

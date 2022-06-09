@@ -7,17 +7,38 @@ Our clock use Real-time clock(RTC)
 It's independent timer.
 */
 
-u8 hour=12, min=0, sec=0;
-
-u8 clk_tmp = 1; // 1 if clock mode else 0
-u8 h24_mode = 1; // 1 if 24 mode else 0
+u8 CLKEN = 1;
+u8 H24 = 1; // 1 if 24 mode else 0
 u8 config_mode = 0;
 u8 show = 1;
 
-void set_time(void);
-void enter_clk_config(void);
-void exit_clk_config(void);
-void display_hhmmss(u8 hh, u8 mm, u8 ss);
+u8 hour=12, min=0, sec=0;
+
+
+void switch_clk(void){
+	if (CLKEN != 0) CLKEN = 0;
+	else CLKEN = 1;
+}
+
+void switch_h24(void){
+	if (H24 != 0) H24 = 0;
+	else H24 = 1;
+}
+
+void enter_clk_config(void){
+	// poll RTOFF
+	while((RTC->CRL & 0x0020)==0){}
+	// enter config mode
+	RTC->CRL |= 1 << 4;
+}
+
+
+void exit_clk_config(void){
+	// exit config mode
+	RTC->CRL &= ~(1 << 4);
+	// poll RTOFF
+	while((RTC->CRL & 0x0020)==0){}
+}
 
 
 void updown_clock(u8 command){
@@ -63,7 +84,9 @@ void enable_clk(){
 	/*initialize real time clock*/
 	RCC->APB1ENR |= 3 << 27; //enable power and backup
 	PWR->CR |= 1 << 8; //enable access to RTC
-	RCC->BDCR |= 1 << 8; // RTC clock source : LSE(2_01) 
+	// RTC clock source : LSE(2_01) 
+	// LSE : 32.768kHz
+	RCC->BDCR |= 1 << 8;
 	RCC->BDCR |= 1;	// LSE ON
 	
 	switch_clk_config();
@@ -80,12 +103,11 @@ void switch_clk_config(void){
 		// sync 0.5 second (for flicker)
 		enter_clk_config();
 		RTC->CRH |= 1; //second interrupt enable
-		RTC->PRLL = 0x3FFF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
+		RTC->PRLL = 0x12FF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
 		exit_clk_config();
 	}
 	else{
 		config_mode = 0;
-		show = 1;
 		// sync 1 second
 		enter_clk_config();
 		RTC->CRH |= 1; //second interrupt enable
@@ -95,25 +117,10 @@ void switch_clk_config(void){
 }
 
 
-void enter_clk_config(void){
-	// poll RTOFF
-	while((RTC->CRL & 0x0020)==0){}
-	// enter config mode
-	RTC->CRL |= 1 << 4;
-}
-
-
-void exit_clk_config(void){
-	// exit config mode
-	RTC->CRL &= ~(1 << 4);
-	// poll RTOFF
-	while((RTC->CRL & 0x0020)==0){}
-}
-
-
 void RTC_IRQHandler(void){
 	if ((RTC->CRL & 1)!=0){
 		if (config_mode == 0){
+			show=1;
 			/* clock works */
 			++sec;
 			if (sec==60){
@@ -127,20 +134,22 @@ void RTC_IRQHandler(void){
 					}
 				}
 			}
-			RTC->CRL &= ~1;
 		}
 		else{
 			/* set hour, min, sec */
-			if (show != 0) show = 0;
-			else show = 1;
+			if (show++ == 5) show = 0;
 		}
-	}
-	if ((clk_tmp != 0) && (show != 0)){
-		if (h24_mode != 0){
-			display_hhmmss(hour, min, sec);
+		if (CLKEN != 0){
+			if (H24 != 0){
+				display_hhmmss(hour, min, sec, show);
+			}
+			else{
+				display_hhmmss(hour%12, min, sec, show);
+			}
 		}
-		else{
-			display_hhmmss(hour%12, min, sec);
+		else {
+			display_hhmmss(0,0,0,0);
 		}
+		RTC->CRL &= ~1;
 	}
 }
