@@ -39,14 +39,14 @@ u8 symbol8x8[3][8]={
 	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, //' 'sign
 };
 uint64_t rawdata[8] = {
-	0x3c103c3c087e, 
-	0x423042421840, 
-	0x46500202287c, 
-	0x4a100c1c4802, 
-	0x52103002fe02, 
-	0x621042420842, 
-	0x3c7c7e3c1c3c, 
-	0x000000000000 
+	0x3c10183c3c18087e, 
+	0x4230184242181840, 
+	0x465000020200287c, 
+	0x4a10000c1c004802, 
+	0x521000300200fe02, 
+	0x6210184242180842, 
+	0x3c7c187e3c181c3c, 
+	0x0000000000000000 
 };
 u8 seq_length = sizeof(rawdata);
 
@@ -82,6 +82,7 @@ void display_hhmmss(u8 hh, u8 mm, u8 ss){
 
 void display_mnC (u8 m, u8 n, u32 temp_mode) {
 		for(u8 j=0; j<8; j++) {
+			rawdata[j] = 0;
 			rawdata[j] += (uint64_t)(font8x8[m][j]<<24);	//m
 			rawdata[j] += (uint64_t)(font8x8[n][j]<<16);		//n
 			rawdata[j] += (uint64_t)(symbol8x8[0][j]<<8);		//'
@@ -104,14 +105,14 @@ void switch_scrolling(u8 index){
 
 void horizon2vertical(void) {
 	switch (clk_tmp) {
-		case 0 :
+		case 1 :
 			for(i_d=0; i_d<24; i_d++) {
 				if(i_d<8) 			vertical_data[i_d] = rawdata[i_d] >> 12*4;
 				else if(i_d>15) vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
 				else						vertical_data[i_d] = (rawdata[i_d-8] >> (6*4)) & 0x0000FFFF;
 			}
 			break;
-		case 1 :
+		case 0 :
 			for(i_d=0; i_d<24; i_d++) {
 				if(i_d<8) 			vertical_data[i_d] = rawdata[i_d] >> (8*4);
 				else if(i_d>15) vertical_data[i_d] = rawdata[i_d-16] & 0x0000FFFF;
