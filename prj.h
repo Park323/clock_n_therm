@@ -24,6 +24,7 @@ void horizon2vertical(void);
 void switch_scrolling(u8 index);
 
 // control
+void scan_button(void);
 void tmp2data(void);
 void tmp2data_off(void);
 void switch_clk_config(void);

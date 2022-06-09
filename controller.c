@@ -41,117 +41,111 @@ void enable_keypad(){
 	// set pull-up mode (default HIGH)
 	GPIOA->ODR |= 0x0F00;
 	
-	enable_TIM3(); //use timer for keypad input
+	// external interrupt
+	EXTI->FTSR = 0x0F00; //EXTI[11:8]
+	EXTI->IMR = 0x0F00;
+	AFIO->EXTICR[2] = 0x0000; //port A
+	NVIC->ISER[0] = 1<<23; //EXTI_9_5
+	NVIC->ISER[1] = 1<<8; //EXTI_15_10
 }
 
 
-void enable_TIM3(){
-	/* enable TIM3 */
-	/* TIM3 is used for checking keypad input */
-	RCC->APB1ENR |= 1 << 1; //enable TIM3
-	
-	TIM3->CR1 = 0x00;
-	TIM3->CR2 = 0x00;
-	TIM3->PSC = 0x10;	//match timer with TIM1
-	TIM3->ARR = 0x2000;
-	
-	TIM3->DIER |= 1;
-	NVIC->ISER[0] |= 1 <<29;
-	
-	//activate clock
-	TIM3->CR1 |= 0x0001;
-}
-
-
-void TIM3_IRQHandler (void){
-	// check Update interrupt pending
-	if ((TIM3->SR & 0x0001) != 0){	
-		key_index=0;
-		for (key_row=0x01;key_row<0x10;key_row=key_row<<1){
-			GPIOC->BSRR = (~(key_row << 8) & 0x0F00) | (key_row << 24);
-			for (j_c=0; j_c<1000; j_c++) {}
-			key_col = GPIOA->IDR;
-			key_col = (key_col >> 8) & 0x0F;
-			col_scan = 0x01;
-			for (j_c=0; j_c<4; j_c++){
-				if ((key_col & col_scan ) == 0){
-					/* if key detected */
-					switch(key_index){
-						case 0:
-							/* switch clock & temperature mode */
-							if (clk_tmp!=0){
-								clk_tmp = 0;
-								tmp2data();
-							}
-							else{
-								tmp2data_off();
-								clk_tmp = 1;
-							}
-							break;
-						case 8:
-							/* switch 12/24 or C/F */
-							if (clk_tmp!=0){
-								if (h24_mode != 0) h24_mode = 0;
-								else h24_mode = 1;
-							}
-							else{
-								if (temp_mode != 0) temp_mode = 0;
-								else temp_mode = 1;
-							}
-							break;
-						case 1:
-							/* Hour ++ */
-							updown_clock(1<<4);
-							break;
-						case 3:
-							/* Hour -- */
-							updown_clock(1<<5);
-							break;
-						case 5:
-							/* Minute ++ */
-							updown_clock(1<<2);
-							break;
-						case 7:
-							/* Minute -- */
-							updown_clock(1<<3);
-							break;
-						case 9:
-							/* Second ++ */
-							updown_clock(1<<0);
-							break;
-						case 11:
-							/* Second -- */
-							updown_clock(1<<1);
-							break;
-						case 12:
-							switch_scrolling(0);
-							break;
-						case 13:
-							switch_scrolling(1);
-							break;
-						case 14:
-							switch_scrolling(2);
-							break;
-						case 15:
-							switch_scrolling(3);
-							break;
-						case 2:
-							/* Reserved */
-							break;
-						case 4:
-							/* Reserved */
-							break;
-						case 6:
-							/* Reserved */
-							break;
-						case 10:
-							/* Reserved */
-							break;
-					}
+void scan_button(){
+	key_index=0;
+	for (key_row=0x01;key_row<0x10;key_row=key_row<<1){
+		GPIOC->BSRR = (~(key_row << 8) & 0x0F00) | (key_row << 24);
+		for (j_c=0; j_c<1000; j_c++) {}
+		key_col = GPIOA->IDR;
+		key_col = (key_col >> 8) & 0x0F;
+		col_scan = 0x01;
+		for (j_c=0; j_c<4; j_c++){
+			if ((key_col & col_scan ) == 0){
+				// if key detected 
+				switch(key_index){
+					case 0:
+						// switch clock & temperature mode 
+						if (clk_tmp!=0){
+							clk_tmp = 0;
+							tmp2data();
+						}
+						else{
+							tmp2data_off();
+							clk_tmp = 1;
+						}
+						break;
+					case 8:
+						//switch 12/24 or C/F
+						if (clk_tmp!=0){
+							if (h24_mode != 0) h24_mode = 0;
+							else h24_mode = 1;
+						}
+						else{
+							if (temp_mode != 0) temp_mode = 0;
+							else temp_mode = 1;
+						}
+						break;
+					case 1:
+						//Hour ++
+						updown_clock(1<<4);
+						break;
+					case 3:
+						//Hour --
+						updown_clock(1<<5);
+						break;
+					case 5:
+						//Minute ++
+						updown_clock(1<<2);
+						break;
+					case 7:
+						//Minute --
+						updown_clock(1<<3);
+						break;
+					case 9:
+						//Second ++
+						updown_clock(1<<0);
+						break;
+					case 11:
+						//Second --
+						updown_clock(1<<1);
+						break;
+					case 12:
+						switch_scrolling(0);
+						break;
+					case 13:
+						switch_scrolling(1);
+						break;
+					case 14:
+						switch_scrolling(2);
+						break;
+					case 15:
+						switch_scrolling(3);
+						break;
+					case 2:
+						//Reserved
+						break;
+					case 4:
+						//Reserved
+						break;
+					case 6:
+						//Reserved 
+						break;
+					case 10:
+						//Reserved
+						break;
 				}
-				col_scan = col_scan << 1;
-				key_index = key_index + 1;
 			}
+			col_scan = col_scan << 1;
+			key_index = key_index + 1;
 		}
 	}
 }
+
+
+void EXTI15_10_IRQHandler(void){
+	scan_button();
+}
+
+void EXTI9_5_IRQHandler(void){
+	scan_button();
+}
+
