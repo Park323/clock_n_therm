@@ -65,8 +65,10 @@ void tmp2data_off() {
 
 void TIM4_IRQHandler (void){
 	if ((TIM4->SR & 0x0001) != 0){
-		temp_conv = cur_TMP;//temp_conv = Celsius temparature. round down after devide.
+		temp_conv = cur_TMP/25;//temp_conv = Celsius temparature. round down after devide.
 		if(temp_mode == 1) temp_conv = temp_conv*1.8+32;	//farenhiet conversion
+		if(temp_conv > 100) temp_conv = temp_conv-100;
+		if(temp_conv < 0) temp_conv = 0;
 		temp_conv_10 = temp_conv/10;		//tens of temp.
 		temp_conv_1 = temp_conv%10;		//units of temp.
 		display_mnC (temp_conv_10, temp_conv_1, temp_mode);
