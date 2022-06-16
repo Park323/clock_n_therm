@@ -11,6 +11,7 @@ u8 CLKEN = 1;
 u8 H24 = 1; // 1 if 24 mode else 0
 u8 config_mode = 0;
 u8 show = 1;
+u8 check = 0;
 
 u8 hour=12, min=0, sec=0;
 
@@ -27,6 +28,7 @@ void switch_h24(void){
 
 void enter_clk_config(void){
 	// poll RTOFF
+	check = RTC->CRL & 0x0020;
 	while((RTC->CRL & 0x0020)==0){}
 	// enter config mode
 	RTC->CRL |= 1 << 4;
@@ -37,7 +39,7 @@ void exit_clk_config(void){
 	// exit config mode
 	RTC->CRL &= ~(1 << 4);
 	// poll RTOFF
-	while((RTC->CRL & 0x0020)==0){}
+	//while((RTC->CRL & 0x0020)==0){}
 }
 
 
@@ -100,18 +102,22 @@ void enable_clk(){
 void switch_clk_config(void){
 	if (config_mode == 0){
 		config_mode = 1;
-		// sync 0.5 second (for flicker)
 		enter_clk_config();
+		
+		// sync 0.5 second (for flicker)
 		RTC->CRH |= 1; //second interrupt enable
 		RTC->PRLL = 0x12FF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
+		
 		exit_clk_config();
 	}
 	else{
 		config_mode = 0;
-		// sync 1 second
 		enter_clk_config();
+		
+		// sync 1 second
 		RTC->CRH |= 1; //second interrupt enable
 		RTC->PRLL = 0x7FFF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
+		
 		exit_clk_config();
 	}
 }
