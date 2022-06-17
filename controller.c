@@ -7,9 +7,11 @@ Make it do not wait for input, we may use EXTI... refer to chapter 8 - discussio
 */
 
 extern u8 CLKEN;
+extern u8 CLK_CONFIG;
 extern u8 H24;
 extern u32 temp_mode;
 
+u8 debug = 0;
 u8 key_index, pressed;
 u32 tmp;
 u32 key_row, key_col;
@@ -64,88 +66,94 @@ void scan_button(u8 col_num){
 		
 		// key detected 
 		if ((key_col & col_num ) == 0){
-				switch(key_index){
-					// S0 : CLK/TMP mode 
-					case 0:
-						pressed = 0;
-						switch_clk();
-						//if (CLKEN!=0) tmp2data_off();
-						//else tmp2data();
-						break;
-					case 8:
-						pressed = 8;
-						//switch 12/24 or C/F
-						if (CLKEN!=0){
-							switch_h24();
-						}
-						//else{
-						//	if (temp_mode != 0) temp_mode = 0;
-						//	else temp_mode = 1;
-						//}
-						break;
-					case 1:
-						pressed = 1;
-						//Hour ++
-						updown_clock(1<<4);
-						break;
-					case 3:
-						pressed = 3;
-						//Hour --
-						updown_clock(1<<5);
-						break;
-					case 5:
-						pressed = 5;
-						//Minute ++
-						updown_clock(1<<2);
-						break;
-					case 7:
-						pressed = 0;
-						//Minute --
-						updown_clock(1<<3);
-						break;
-					case 9:
-						pressed = 9;
-						//Second ++
-						updown_clock(1<<0);
-						break;
-					case 11:
-						pressed = 11;
-						//Second --
-						updown_clock(1<<1);
-						break;
-					case 12:
-						pressed = 12;
-						switch_scrolling(0);
-						break;
-					case 13:
-						pressed = 13;
-						switch_scrolling(1);
-						break;
-					case 14:
-						pressed = 14;
-						switch_scrolling(2);
-						break;
-					case 15:
-						pressed = 15;
-						switch_scrolling(3);
-						break;
-					case 2:
-						pressed = 2;
-						//Reserved
-						break;
-					case 4:
-						pressed = 4;
-						//Reserved
-						break;
-					case 6:
-						pressed = 6;
-						//Reserved 
-						break;
-					case 10:
-						pressed = 10;
-						//Reserved
-						break;
+			pressed = key_index;
+			switch(key_index){
+				/*
+					S0 : CLK/TMP mode 
+				*/
+				case 0:
+					switch_clk();
+					//if (CLKEN!=0) tmp2data_off();
+					//else tmp2data();
+					break;
+				/* 
+					S6 : set button
+					enable clock setting
+					confirm setting
+				*/
+				case 6:
+					if (CLKEN){
+						if (CLK_CONFIG)
+							exit_clk_config();
+						else 
+							enter_clk_config();
+					}
+					break;
+				/*
+					S1 : back button
+					exit config mode
+					back to original setting
+				*/
+				case 1:
+					if (CLKEN && CLK_CONFIG)
+						backup_clk();
+					break;
+				/*
+					S2 : UP
+					increase +
+				*/
+				case 2:
+					if (CLKEN && CLK_CONFIG)
+						updown_clock(0);
+					break;
+				/*
+					S10 : DOWN
+					decrease -
+				*/
+				case 10:
+					if (CLKEN && CLK_CONFIG)
+						updown_clock(1);
+					break;
+				/*
+					S5 : LEFT
+				*/
+				case 5:
+					if (CLKEN && CLK_CONFIG) 
+						switch_config_unit(1);
+					break;
+				/*
+					S7 : RIGHT
+				*/
+				case 7:
+					if (CLKEN && CLK_CONFIG) 
+						switch_config_unit(0);
+					break;
+				//switch 12/24 or C/F
+				case 8:
+					if (CLKEN)
+						switch_h24();
+					//else{
+					//	if (temp_mode != 0) temp_mode = 0;
+					//	else temp_mode = 1;
+					//}
+					break;
+				case 12:
+					switch_scrolling(0);
+					break;
+				case 13:
+					switch_scrolling(1);
+					break;
+				case 14:
+					switch_scrolling(2);
+					break;
+				case 15:
+					switch_scrolling(3);
+					break;
+				case 4:
+					//Reserved
+					break;
 			}
+			break;
 		}
 		key_index = key_index + 4;
 	}

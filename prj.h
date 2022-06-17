@@ -23,13 +23,18 @@ void display_mnC(u8 m, u8 n, u32 temp_mode);
 void horizon2vertical(void);
 void switch_scrolling(u8 index);
 
+// clock control
+void switch_clk(void);
+void switch_h24(void);
+void switch_config_unit(u8 dir);
+void enter_clk_config(void);
+void exit_clk_config(void);
+void backup_clk(void);
+void updown_clock(u8 command);
+
 // control
 void scan_button(u8 col_num);
 void tmp2data(void);
 void tmp2data_off(void);
-void switch_clk(void);
-void switch_clk_config(void);
-void switch_h24(void);
-void updown_clock(u8 command);
 
 #endif

@@ -9,11 +9,14 @@ It's independent timer.
 
 u8 CLKEN = 1;
 u8 H24 = 1; // 1 if 24 mode else 0
-u8 config_mode = 0;
-u8 show = 1;
+int HMS = 0; // H : 0, M : 1, S : 2
+u8 CLK_CONFIG = 0;
 u8 check = 0;
 
-u8 hour=12, min=0, sec=0;
+u8 flash_b = 0, hour_b=12, min_b=0, sec_b=0;
+u8 flash = 0, hour_d=12, hour=12, min=0, sec=0;
+
+u8 flash_count = 1;
 
 
 void switch_clk(void){
@@ -26,7 +29,8 @@ void switch_h24(void){
 	else H24 = 1;
 }
 
-void enter_clk_config(void){
+
+void enter_RTC_config(void){
 	// poll RTOFF
 	check = RTC->CRL & 0x0020;
 	while((RTC->CRL & 0x0020)==0){}
@@ -34,8 +38,7 @@ void enter_clk_config(void){
 	RTC->CRL |= 1 << 4;
 }
 
-
-void exit_clk_config(void){
+void exit_RTC_config(void){
 	// exit config mode
 	RTC->CRL &= ~(1 << 4);
 	// poll RTOFF
@@ -43,41 +46,66 @@ void exit_clk_config(void){
 }
 
 
-void updown_clock(u8 command){
-	/* command */
-	/* U : upcount */
-	/* D : downcount */
-	/* H : hour */
-	/* M : min */
-	/* S : second */
-	/* N : None */
-	/* bit	7		6		5		4		3		2		1		0  */
-	/* 			N		N		DH	UH	DM	UM	DS	US */
-	switch(command){
-		case 1<<0 :
-			++sec;
-			if (sec==60) sec = 0;
-			break;
-		case 1<<1 :
-			if (sec==0) sec = 60;
-			--sec;
-			break;
-		case 1<<2 :
-			++min;
-			if (min==60) min = 0;
-			break;
-		case 1<<3 :
-			if (min==0) min = 60;
-			--min;
-			break;
-		case 1<<4 :
-			++hour;
-			if (hour==24) hour = 0;
-			break;
-		case 1<<5 :
-			if (hour==0) hour = 24;
-			--hour;
-			break;
+void set_flash(void){
+	flash = 1;
+	
+	enter_RTC_config();
+	
+	// sync 0.5 second (for flicker)
+	RTC->CRH |= 1; //second interrupt enable
+	RTC->PRLL = 0x12FF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
+	
+	exit_RTC_config();
+}
+
+void set_stable(void){
+	flash = 0;
+	
+	enter_RTC_config();
+	
+	// sync 1 second
+	RTC->CRH |= 1; //second interrupt enable
+	RTC->PRLL = 0x7FFF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
+	
+	exit_RTC_config();
+}
+
+
+// Clock Configuaration
+void enter_clk_config(void){
+	CLK_CONFIG = 1;
+	RCC->BDCR &= ~1;	// LSE OFF
+	enter_RTC_config();
+}
+
+void exit_clk_config(void){
+	exit_RTC_config();
+	RCC->BDCR |= 1;	// LSE ON
+	CLK_CONFIG = 0;
+}
+
+void backup_clk(void){
+	CLK_CONFIG = 0;
+	HMS = 0;
+	flash = flash_b;
+	hour = hour_b;
+	min = min_b;
+	sec = sec_b;
+}
+
+
+void switch_config_unit(u8 direction){
+	/* 
+	direction
+	0 : step next
+	1 : step back
+	order : Hour/Minute/Second
+	*/
+	if (direction == 0){
+		if (++HMS == 3) HMS=0;
+	}
+	else {
+		if (--HMS == -1) HMS=2;
 	}
 }
 
@@ -91,7 +119,7 @@ void enable_clk(){
 	RCC->BDCR |= 1 << 8;
 	RCC->BDCR |= 1;	// LSE ON
 	
-	switch_clk_config();
+	set_flash();
 	
 	//RTC and interrupt enable
 	RCC->BDCR |= 1 << 15;
@@ -99,34 +127,55 @@ void enable_clk(){
 }
 
 
-void switch_clk_config(void){
-	if (config_mode == 0){
-		config_mode = 1;
-		enter_clk_config();
-		
-		// sync 0.5 second (for flicker)
-		RTC->CRH |= 1; //second interrupt enable
-		RTC->PRLL = 0x12FF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
-		
-		exit_clk_config();
+void updown_clock(u8 command){
+	/* 
+	command
+	0 : increase
+	1 : decrease
+	*/
+	hour_b = hour;
+	min_b = min;
+	sec_b = sec;
+	
+	if (command==0){
+		switch(HMS){
+			case 0 :
+				++hour;
+				if (hour==24) hour = 0;
+				break;
+			case 1 :
+				++min;
+				if (min==60) min = 0;
+				break;
+			case 2 :
+				++sec;
+				if (sec==60) sec = 0;
+				break;
+		}
 	}
-	else{
-		config_mode = 0;
-		enter_clk_config();
-		
-		// sync 1 second
-		RTC->CRH |= 1; //second interrupt enable
-		RTC->PRLL = 0x7FFF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
-		
-		exit_clk_config();
+	else {
+		switch(HMS){
+			case 0 :
+				if (hour==0) hour = 24;
+				--hour;
+				break;
+			case 1 :
+				if (min==0) min = 60;
+				--min;
+				break;
+			case 2 :
+				if (sec==0) sec = 60;
+				--sec;
+				break;
+		}
 	}
 }
 
 
+
 void RTC_IRQHandler(void){
 	if ((RTC->CRL & 1)!=0){
-		if (config_mode == 0){
-			show=1;
+		if (!flash){
 			/* clock works */
 			++sec;
 			if (sec==60){
@@ -141,21 +190,11 @@ void RTC_IRQHandler(void){
 				}
 			}
 		}
-		else{
-			/* set hour, min, sec */
-			if (show++ == 5) show = 0;
-		}
-		if (CLKEN != 0){
-			if (H24 != 0){
-				display_hhmmss(hour, min, sec, show);
-			}
-			else{
-				display_hhmmss(hour%12, min, sec, show);
-			}
-		}
-		else {
-			display_hhmmss(0,0,0,0);
-		}
+		else if (++flash_count == 5) flash_count = 0;
+
+		if (H24 != 0) hour_d = hour;
+		else hour_d = hour%12;
+
 		RTC->CRL &= ~1;
 	}
 }
