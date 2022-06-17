@@ -7,9 +7,9 @@ connect with keypad and TMP sensor
 enable clock signal
 
 send these values to Rx module
-- button number
+- scroll mode
 - hour, min, sec
-- temperature
+- temperature, temp_mode
 */
 
 int main(){

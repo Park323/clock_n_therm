@@ -8,7 +8,7 @@ connect with dot matrix
 receive these values from Tx module
 - scroll mode
 - hour, min, sec
-- temperature
+- temperature, temp_mode
 
 then display the information on dot matrix
 */
