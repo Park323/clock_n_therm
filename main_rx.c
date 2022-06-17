@@ -14,13 +14,10 @@ then display the information on dot matrix
 */
 
 int main(){
-	//Mr.kim fighting!!
-	//Mr.park fighting!!
-	//yeah~
-	
 	enable_dot_matrix();
 	
 	activate_display();
+	enable_TIM1();
 	
 	/* Loop waiting for interrupt */
 	while(1){ __WFI(); }
