@@ -187,7 +187,7 @@ void TIM2_IRQHandler (void){
 						if(seq_length > base) display[i_d] = (u8)(rawdata[i_d] >> (seq_length - base));		//for start from right edge
 						else 									display[i_d] = (u8)(rawdata[i_d] << (base - seq_length));
 					}
-					if(++base==(seq_length + display_length*2)) base=0; //scroll init
+					if(++base>=(seq_length + display_length*2)) base=0; //scroll init
 					break;
 				case 1 :
 					//horizontal_right mode
@@ -195,7 +195,7 @@ void TIM2_IRQHandler (void){
 						if(display_length > base) display[i_d] = (u8)(rawdata[i_d] << (display_length - base));		//for start from right edge
 						else 											display[i_d] = (u8)(rawdata[i_d] >> (base - display_length));
 					}
-					if(++base==(seq_length + display_length*2)) base=0; //scroll init
+					if(++base>=(seq_length + display_length*2)) base=0; //scroll init
 					break;
 				case 2 :
 					//vertical up mode
@@ -209,7 +209,7 @@ void TIM2_IRQHandler (void){
 						}
 					}
 					base++;
-					if (base==30) base=0;
+					if (base>=30) base=0;
 					break;
 				case 3 :
 					//vertical down mode
@@ -223,7 +223,7 @@ void TIM2_IRQHandler (void){
 						}
 					}
 					base++;
-					if (base==30) base=0;
+					if (base>=30) base=0;
 					break;
 			}
 		}
