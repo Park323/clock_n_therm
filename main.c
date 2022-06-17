@@ -1,24 +1,18 @@
 #include <stm32f10x.h>
 #include "prj.h"
 
-/*
-USART Receiver
-connect with dot matrix
-
-receive these values from Tx module
-- scroll mode
-- hour, min, sec
-- temperature
-
-then display the information on dot matrix
-*/
+//Step1 : single mode
 
 int main(){
 	//Mr.kim fighting!!
 	//Mr.park fighting!!
 	//yeah~
 	
+	//Activte Dot matrix & Keypad, we follow connection of Chapter9 - step9
 	enable_dot_matrix();
+	enable_keypad();
+	enable_clk();
+	//enable_TMP();
 	
 	activate_display();
 	
