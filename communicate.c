@@ -6,8 +6,9 @@ PA1 : USART2_RTS
 PA2 : USART2_TX
 PA3 : USART2_RX */
 
+extern int HMS;
 extern u8 scroll_mode;
-extern u8 CLKEN;
+extern u8 CLKEN, CLK_CONFIG;
 extern u8 hour_d, min, sec;
 extern u8 temp_conv_10, temp_conv_1, temp_mode;
 
@@ -73,7 +74,13 @@ void USART3_IRQHandler (void) {
 			case 7 :
 				USART1->DR = temp_mode;
 				break;
+			case 8 :
+				USART1->DR = CLK_CONFIG;
+				break;
+			case 9 :
+				USART1->DR = HMS;
+				break;
 		}
-		if (++word_idx == 8) word_idx = 0; 
+		if (++word_idx == 10) word_idx = 0; 
 	}
 }

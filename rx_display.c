@@ -5,7 +5,8 @@
 Dot matrix shows hour or temperature.
 */
 
-extern u8 scroll_mode, CLKEN;
+extern HMS;
+extern u8 scroll_mode, CLKEN, CLK_CONFIG;
 extern u8 hour, min, sec;
 extern u8 temp_conv_10, temp_conv_1, temp_mode;
 
@@ -99,6 +100,12 @@ void display_mnC (u8 m, u8 n, u32 temp_mode) {
 		}
 }
 
+void display_nn(u8 nn) {
+	for(u8 i=0; i<8; i++) {
+		display[i] = (font8x8[(nn/10)][i]<<8) + font8x8[(nn%10)][i];
+	}
+}
+
 
 void horizon2vertical(void) {
 	switch (CLKEN) {
@@ -186,51 +193,66 @@ void TIM2_IRQHandler (void){
 	if ((TIM2->SR & 0x0001) != 0){
 		if (update_counter++ == 100) {													//'Display array' is scrolled 1 bit per 100 interrupt.
 			update_counter = 0;
-			switch (scroll_mode){
-				case 0 :
-					//horizontal_left mode
-					for(i_d=0; i_d<8; i_d++){
-						if(seq_length > base) display[i_d] = (u16)(rawdata[i_d] >> (seq_length - base));		//for start from right edge
-						else 									display[i_d] = (u16)(rawdata[i_d] << (base - seq_length));
-					}
-					if(++base>=(seq_length + display_length*2)) base=0; //scroll init
-					break;
-				case 1 :
-					//horizontal_right mode
-					for(i_d=0; i_d<8; i_d++){
-						if(display_length > base) display[i_d] = (u16)(rawdata[i_d] << (display_length - base));		//for start from right edge
-						else 											display[i_d] = (u16)(rawdata[i_d] >> (base - display_length));
-					}
-					if(++base>=(seq_length + display_length*2)) base=0; //scroll init
-					break;
-				case 2 :
-					//vertical up mode
-					horizon2vertical();
-					for(i_d=0; i_d<8; i_d++) {
-						if (i_d+base-7<0 || i_d+base-7>23){
-							display[i_d] = 0;
+			if (CLK_CONFIG == 1) {
+				switch (HMS) {
+					case 0:
+						display_nn(hour);
+						break;
+					case 1:
+						display_nn(min);
+						break;
+					case 2:
+						display_nn(sec);
+						break;
+				}
+			}
+			else {
+				switch (scroll_mode){
+					case 0 :
+						//horizontal_left mode
+						for(i_d=0; i_d<8; i_d++){
+							if(seq_length > base) display[i_d] = (u16)(rawdata[i_d] >> (seq_length - base));		//for start from right edge
+							else 									display[i_d] = (u16)(rawdata[i_d] << (base - seq_length));
 						}
-						else {
-						display[i_d] = vertical_data[i_d+base-7];
+						if(++base>=(seq_length + display_length*2)) base=0; //scroll init
+						break;
+					case 1 :
+						//horizontal_right mode
+						for(i_d=0; i_d<8; i_d++){
+							if(display_length > base) display[i_d] = (u16)(rawdata[i_d] << (display_length - base));		//for start from right edge
+							else 											display[i_d] = (u16)(rawdata[i_d] >> (base - display_length));
 						}
-					}
-					base++;
-					if (base>=30) base=0;
-					break;
-				case 3 :
-					//vertical down mode
-					horizon2vertical();
-					for(i_d=0; i_d<8; i_d++) {
-						if (23+i_d-base<0 || 23+i_d-base>23){
-							display[i_d] = 0;
+						if(++base>=(seq_length + display_length*2)) base=0; //scroll init
+						break;
+					case 2 :
+						//vertical up mode
+						horizon2vertical();
+						for(i_d=0; i_d<8; i_d++) {
+							if (i_d+base-7<0 || i_d+base-7>23){
+								display[i_d] = 0;
+							}
+							else {
+							display[i_d] = vertical_data[i_d+base-7];
+							}
 						}
-						else {
-						display[i_d] = vertical_data[23+i_d-base];
+						base++;
+						if (base>=30) base=0;
+						break;
+					case 3 :
+						//vertical down mode
+						horizon2vertical();
+						for(i_d=0; i_d<8; i_d++) {
+							if (23+i_d-base<0 || 23+i_d-base>23){
+								display[i_d] = 0;
+							}
+							else {
+							display[i_d] = vertical_data[23+i_d-base];
+							}
 						}
-					}
-					base++;
-					if (base>=30) base=0;
-					break;
+						base++;
+						if (base>=30) base=0;
+						break;
+				}
 			}
 		}
 		GPIOB->ODR = (~display_row)<<8;
