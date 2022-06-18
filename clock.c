@@ -9,14 +9,14 @@ It's independent timer.
 
 u8 CLKEN = 1;
 u8 H24 = 1; // 1 if 24 mode else 0
-int HMS = 0; // H : 0, M : 1, S : 2
+u8 HMS = 0; // H : 0, M : 1, S : 2
 u8 CLK_CONFIG = 0;
-u8 check = 0;
+
+u8 clk_count = 0;
+u8 no_input = 0;
 
 u8 flash_b = 0, hour_b=12, min_b=0, sec_b=0;
 u8 flash = 0, hour_d=12, hour=12, min=0, sec=0;
-
-u8 flash_count = 1;
 
 
 void switch_clk(void){
@@ -32,7 +32,6 @@ void switch_h24(void){
 
 void enter_RTC_config(void){
 	// poll RTOFF
-	check = RTC->CRL & 0x0020;
 	while((RTC->CRL & 0x0020)==0){}
 	// enter config mode
 	RTC->CRL |= 1 << 4;
@@ -46,26 +45,14 @@ void exit_RTC_config(void){
 }
 
 
-void set_flash(void){
+void initialize_RTC(void){
 	flash = 1;
 	
 	enter_RTC_config();
 	
-	// sync 0.5 second (for flicker)
+	// sync 0.25 second
 	RTC->CRH |= 1; //second interrupt enable
-	RTC->PRLL = 0x12FF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
-	
-	exit_RTC_config();
-}
-
-void set_stable(void){
-	flash = 0;
-	
-	enter_RTC_config();
-	
-	// sync 1 second
-	RTC->CRH |= 1; //second interrupt enable
-	RTC->PRLL = 0x7FFF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
+	RTC->PRLL = 0x1FFF; // reload value (TR_CLK = RTCCLK / (PRL + 1))
 	
 	exit_RTC_config();
 }
@@ -74,8 +61,9 @@ void set_stable(void){
 // Clock Configuaration
 void enter_clk_config(void){
 	CLK_CONFIG = 1;
-	RCC->BDCR &= ~1;	// LSE OFF
+	RCC->BDCR &= ~(u16)1;	// LSE OFF
 	enter_RTC_config();
+	reset_input_count();
 }
 
 void exit_clk_config(void){
@@ -105,7 +93,8 @@ void switch_config_unit(u8 direction){
 		if (++HMS == 3) HMS=0;
 	}
 	else {
-		if (--HMS == -1) HMS=2;
+		if (HMS == 0) HMS = 2;
+		else --HMS;
 	}
 }
 
@@ -119,7 +108,7 @@ void enable_clk(){
 	RCC->BDCR |= 1 << 8;
 	RCC->BDCR |= 1;	// LSE ON
 	
-	set_flash();
+	initialize_RTC();
 	
 	//RTC and interrupt enable
 	RCC->BDCR |= 1 << 15;
@@ -172,28 +161,43 @@ void updown_clock(u8 command){
 }
 
 
+void reset_input_count(void){
+	no_input = 0;
+}
+
 
 void RTC_IRQHandler(void){
 	if ((RTC->CRL & 1)!=0){
-		if (!flash){
-			/* clock works */
-			++sec;
-			if (sec==60){
-				sec = 0;
-				++min;
-				if (min==60){
-					min = 0;
-					++hour;
-					if (hour==24){
-						hour = 0;
+		if (clk_count==4){
+			clk_count = 0;
+			/* time counts for each 4th clk count*/
+			if (!flash){
+				if (++sec==60){
+					sec = 0;
+					if (++min==60){
+						min = 0;
+						if (++hour==24){
+							hour = 0;
+						}
 					}
 				}
 			}
 		}
-		else if (++flash_count == 5) flash_count = 0;
-
-		if (H24 != 0) hour_d = hour;
-		else hour_d = hour%12;
+		
+		/* send hour info. to display */
+		if (clk_count==0 && flash)
+			hour_d = 100; // do not show anything on display.
+		else if (H24 != 0) 
+			hour_d = hour;
+		else 
+			hour_d = hour%12;
+		
+		/* check for no input period */
+		++no_input;
+		if (no_input==4){
+			backup_clk();
+			exit_clk_config();
+		}
 
 		RTC->CRL &= ~1;
 	}

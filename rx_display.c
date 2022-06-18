@@ -5,7 +5,7 @@
 Dot matrix shows hour or temperature.
 */
 
-extern HMS;
+extern u8 HMS;
 extern u8 scroll_mode, CLKEN, CLK_CONFIG;
 extern u8 hour, min, sec;
 extern u8 temp_conv_10, temp_conv_1, temp_mode;
@@ -70,10 +70,10 @@ void activate_display(){
 	DMA1_Channel2->CCR |= 1;
 }
 
-void display_hhmmss(u8 hh, u8 mm, u8 ss, u8 show){
+void display_hhmmss(u8 hh, u8 mm, u8 ss){
 	for(u8 i=0; i<8; i++) {
 		rawdata[i] = 0;
-		if (show!=0){
+		if (hh!=100){
 			rawdata[i] += ((uint64_t)font8x8[hh/10][i]<<56)+((uint64_t)font8x8[hh%10][i]<<48); //hh
 			rawdata[i] += ((uint64_t)symbol8x8[1][i]<<40); //':'
 			rawdata[i] += ((uint64_t)font8x8[mm/10][i]<<32)+((uint64_t)font8x8[mm%10][i]<<24); //mm
@@ -129,7 +129,7 @@ void horizon2vertical(void) {
 
 void enable_dot_matrix(){
 	/* reference : Program 11.1
-	display_row :: pin :: port
+	 row :: pin :: port
 		1			9			PB8
 		2			14		PB9
 		3			8			PB10
@@ -138,7 +138,7 @@ void enable_dot_matrix(){
 		6			7			PB13
 		7			2			PB14
 		8			5			PB15
-	col :: pin :: port
+#1_col :: pin :: port
 		1			13		PC7
 	  2			3			PC6
 	  3			4			PC5
@@ -147,7 +147,7 @@ void enable_dot_matrix(){
 	  6			11		PC2
 	  7			15		PC1
 	  8			16		PC0 
-	display 2 col
+#2_col :: pin :: port
 		9			13		PC15
 	  10		3			PC14
 	  11		4			PC13

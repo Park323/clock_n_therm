@@ -6,7 +6,7 @@ PA1 : USART2_RTS
 PA2 : USART2_TX
 PA3 : USART2_RX */
 
-extern int HMS;
+extern u8 HMS;
 extern u8 scroll_mode;
 extern u8 CLKEN, CLK_CONFIG;
 extern u8 hour_d, min, sec;
@@ -30,55 +30,39 @@ void enable_Tx(void){
 	USART3->CR1 |= 0x2000; //UE bit
 }
 
-void enable_Rx(void){
-	RCC->APB2ENR |= 0x00000004; //GPIOA clock enable
-	RCC->APB1ENR |= 0x00020000;	//USART2 clock enable
-	
-	GPIOA->CRL &= ~(0xFFu << 8); //PA2, PA3 mode reset
-	GPIOA->CRL |= (0x04B << 8);	//PA2 : AF output pushpull, PA3 : input float
-	
-	USART3->BRR = 0x753;	//baudrate = 19200
-	
-	NVIC->ISER[1] |= (1<<7); //USART3 global interrupt enable
-	USART1->CR1 |= 0x00000020; // RXNEIE bit set
-	
-	USART3->CR1 |= 0x00000004; //RE bit
-	USART3->CR1 |= 0x00002000; //UE set
-}
-
 
 void USART3_IRQHandler (void) {
 	if(USART3->SR & 80){
 		switch (word_idx){
 			case 0 :
-				USART1->DR = scroll_mode;
+				USART3->DR = scroll_mode;
 				break;
 			case 1 :
-				USART1->DR = CLKEN;
+				USART3->DR = CLKEN;
 				break;
 			case 2 :
-				USART1->DR = hour_d;
+				USART3->DR = hour_d;
 				break;
 			case 3 :
-				USART1->DR = min;
+				USART3->DR = min;
 				break;
 			case 4 :
-				USART1->DR = sec;
+				USART3->DR = sec;
 				break;
 			case 5 :
-				USART1->DR = temp_conv_10;
+				USART3->DR = temp_conv_10;
 				break;
 			case 6 :
-				USART1->DR = temp_conv_1;
+				USART3->DR = temp_conv_1;
 				break;
 			case 7 :
-				USART1->DR = temp_mode;
+				USART3->DR = temp_mode;
 				break;
 			case 8 :
-				USART1->DR = CLK_CONFIG;
+				USART3->DR = CLK_CONFIG;
 				break;
 			case 9 :
-				USART1->DR = HMS;
+				USART3->DR = HMS;
 				break;
 		}
 		if (++word_idx == 10) word_idx = 0; 

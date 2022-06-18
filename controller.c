@@ -10,6 +10,7 @@ extern u8 CLKEN;
 extern u8 CLK_CONFIG;
 extern u8 H24;
 extern u32 temp_mode;
+extern u8 no_input;
 
 u8 debug = 0;
 u8 key_index, pressed;
@@ -95,8 +96,10 @@ void scan_button(u8 col_num){
 					back to original setting
 				*/
 				case 1:
-					if (CLKEN && CLK_CONFIG)
+					if (CLKEN && CLK_CONFIG){
 						backup_clk();
+						exit_clk_config();
+					}
 					break;
 				/*
 					S2 : UP

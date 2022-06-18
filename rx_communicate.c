@@ -6,7 +6,7 @@ PA1 : USART2_RTS
 PA2 : USART2_TX
 PA3 : USART2_RX */
 
-int HMS;
+u8 HMS;
 u8 scroll_mode, CLK_CONFIG;
 u8 CLKEN = 1;
 u8 hour=12, min=0, sec=0;
@@ -43,7 +43,7 @@ void USART3_IRQHandler (void) {
 				CLKEN = USART1->DR;
 				break;
 			case 2 :
-				hour = USART1->DR; // hour_d?
+				hour = USART1->DR; // hour_d? it's good.
 				break;
 			case 3 :
 				min = USART1->DR;
