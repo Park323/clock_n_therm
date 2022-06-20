@@ -17,54 +17,51 @@ u8 word_idx = 0;
 
 
 void enable_Rx(void){
-	RCC->APB2ENR |= 0x00000004; //GPIOA clock enable
-	RCC->APB1ENR |= 0x00020000;	//USART2 clock enable
+	RCC->APB2ENR |= 0x00004004; //GPIOA clock enable
+	AFIO->MAPR |= 0x0000004;
 	
-	GPIOA->CRL &= ~(0xFFu << 8); //PA2, PA3 mode reset
-	GPIOA->CRL |= (0x04B << 8);	//PA2 : AF output pushpull, PA3 : input float
+	USART1->BRR = 0xEA6;	//baudrate = 19200
 	
-	USART2->BRR = 0x753;	//baudrate = 19200
+	NVIC->ISER[1] |= (1<<5); //USART2 global interrupt enable
+	USART1->CR1 |= 0x00000020; // RXNEIE bit set
 	
-	NVIC->ISER[1] |= (1<<6); //USART2 global interrupt enable
-	USART2->CR1 |= 0x00000020; // RXNEIE bit set
-	
-	USART2->CR1 |= 0x00000004; //RE bit
-	USART2->CR1 |= 0x00002000; //UE set
+	USART1->CR1 |= 0x00000004; //RE bit
+	USART1->CR1 |= 0x00002000; //UE set
 }
 
 
-void USART2_IRQHandler (void) {
-	if(USART2->SR & 20){
+void USART1_IRQHandler (void) {
+	if(USART1->SR & 0x20){
 		switch (word_idx){
 			case 0 :
-				scroll_mode = USART2->DR;
+				scroll_mode = USART1->DR;
 				break;
 			case 1 :
-				CLKEN = USART2->DR;
+				CLKEN = USART1->DR;
 				break;
 			case 2 :
-				hour = USART2->DR; // hour_d? it's good.
+				hour = USART1->DR; // hour_d? it's good.
 				break;
 			case 3 :
-				min = USART2->DR;
+				min = USART1->DR;
 				break;
 			case 4 :
-				sec = USART2->DR;
+				sec = USART1->DR;
 				break;
 			case 5 :
-				temp_conv_10 = USART2->DR;
+				temp_conv_10 = USART1->DR;
 				break;
 			case 6 :
-				temp_conv_1 = USART2->DR;
+				temp_conv_1 = USART1->DR;
 				break;
 			case 7 :
-				temp_mode = USART2->DR;
+				temp_mode = USART1->DR;
 				break;
 			case 8 :
-				CLK_CONFIG = USART2->DR;
+				CLK_CONFIG = USART1->DR;
 				break;
 			case 9 :
-				HMS = USART2->DR;
+				HMS = USART1->DR;
 				break;
 		}
 		if (++word_idx == 10) word_idx = 0; 

@@ -163,7 +163,7 @@ void enable_dot_matrix(){
 	// enable port B,C(3,4) & AFIO(0)
 	RCC->APB2ENR |= 0x0000001D;
 	// set ports for output mode
-//AFIO->MAPR = 0x04000000;
+	AFIO->MAPR |= 0x04000000;
 	GPIOC->CRL = 0x33333333;
 	GPIOB->CRH = 0x33333333;
 	GPIOA->CRH = 0x33333333;
