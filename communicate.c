@@ -1,10 +1,8 @@
 #include <stm32f10x.h>
 #include "prj.h"
 
-/* PA0 : USART2_CTS
-PA1 : USART2_RTS
-PA2 : USART2_TX
-PA3 : USART2_RX */
+/* APB1 : 36MHz */
+/* PB10 USART3_TX */
 
 extern u8 HMS;
 extern u8 scroll_mode;
@@ -16,9 +14,9 @@ u8 num_words = 8;
 u8 word_idx = 0;
 
 void enable_Tx(void){
-	RCC->APB2ENR |= 0x00000004; //GPIOA clock enable
-	GPIOA->CRL &= ~(0xFFu << 8); //PA2 mode reset
-	GPIOA->CRL |= (0x04B << 8);	//PA2 : AF output pushpull
+	RCC->APB2ENR |= 0x00000008; //GPIOB clock enable
+	GPIOB->CRH &= ~(0xFFu << 4*2); //PB10 mode reset
+	GPIOB->CRH |= (0x04B << 4*2);	//PB10 : AF output pushpull
 	
 	USART3->BRR = 0x753;	//baudrate = 19200
 	
