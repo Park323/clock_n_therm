@@ -1,5 +1,5 @@
 #include <stm32f10x.h>
-#include "prj.h"
+#include "prj_tx.h"
 
 /*
 USART Transmitter
@@ -18,8 +18,14 @@ int main(){
 	//yeah~
 	
 	enable_keypad();
+	
 	enable_clk();
-	//enable_TMP();
+	set_TIM1();
+	
+	enable_TMP();
+	tmp2data();
+	
+	enable_Tx();
 	
 	/* Loop waiting for interrupt */
 	while(1){ __WFI(); }

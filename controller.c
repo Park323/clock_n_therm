@@ -1,5 +1,5 @@
 #include <stm32f10x.h>
-#include "prj.h"
+#include "prj_tx.h"
 
 /*
 Keypad controls the display and operate mode
@@ -11,10 +11,12 @@ extern u8 CLK_CONFIG;
 extern u8 H24;
 extern u32 temp_mode;
 extern u8 no_input;
+extern u8 flash;
 
 u8 debug = 0;
 u8 key_index, pressed;
-u32 tmp;
+u8 scroll_mode = 0;
+u32 delay;
 u32 key_row, key_col;
 
 
@@ -61,7 +63,7 @@ void scan_button(u8 col_num){
 	key_index=i;
 	for (key_row=0x01;key_row<0x10;key_row=key_row<<1){
 		GPIOC->BSRR = (~(key_row << 8) & 0x0F00) | (key_row << 24);
-		for (tmp=0; tmp<1000; tmp++) {}
+		for (delay=0; delay<1000; delay++) {}
 		key_col = GPIOA->IDR;
 		key_col = (key_col >> 8) & 0x0F;
 		
@@ -74,8 +76,6 @@ void scan_button(u8 col_num){
 				*/
 				case 0:
 					switch_clk();
-					//if (CLKEN!=0) tmp2data_off();
-					//else tmp2data();
 					break;
 				/* 
 					S6 : set button
@@ -84,10 +84,14 @@ void scan_button(u8 col_num){
 				*/
 				case 6:
 					if (CLKEN){
-						if (CLK_CONFIG)
+						if (CLK_CONFIG!=0){
 							exit_clk_config();
-						else 
+							flash = 0;
+						}
+						else {
+							backup_clk();
 							enter_clk_config();
+						}
 					}
 					break;
 				/*
@@ -97,7 +101,7 @@ void scan_button(u8 col_num){
 				*/
 				case 1:
 					if (CLKEN && CLK_CONFIG){
-						backup_clk();
+						restore_clk();
 						exit_clk_config();
 					}
 					break;
@@ -135,22 +139,22 @@ void scan_button(u8 col_num){
 				case 8:
 					if (CLKEN)
 						switch_h24();
-					//else{
-					//	if (temp_mode != 0) temp_mode = 0;
-					//	else temp_mode = 1;
-					//}
+					else {
+						if (temp_mode != 0) temp_mode = 0;
+						else temp_mode = 1;
+					}
 					break;
 				case 12:
-					switch_scrolling(0);
+					scroll_mode = 0;
 					break;
 				case 13:
-					switch_scrolling(1);
+					scroll_mode = 1;
 					break;
 				case 14:
-					switch_scrolling(2);
+					scroll_mode = 2;
 					break;
 				case 15:
-					switch_scrolling(3);
+					scroll_mode = 3;
 					break;
 				case 4:
 					//Reserved
@@ -164,6 +168,9 @@ void scan_button(u8 col_num){
 
 
 void EXTI9_5_IRQHandler(void){
+	scan_button(1<<0);
+	scan_button(1<<1);
+	/*
 	if ((EXTI->PR & 0x0100)!=0)	{
 		scan_button(1<<0);
 		EXTI->PR |= 1<<8;
@@ -171,10 +178,13 @@ void EXTI9_5_IRQHandler(void){
 	if ((EXTI->PR & 0x0200)!=0)	{
 		scan_button(1<<1);
 		EXTI->PR |= 1<<9;
-	}
+	}*/
 }
 
 void EXTI15_10_IRQHandler(void){
+	scan_button(1<<2);
+	scan_button(1<<3);
+	/*
 	if ((EXTI->PR & 0x0400)!=0)	{
 		scan_button(1<<2);
 		EXTI->PR |= 1<<10;
@@ -182,5 +192,5 @@ void EXTI15_10_IRQHandler(void){
 	if ((EXTI->PR & 0x0800)!=0)	{
 		scan_button(1<<3);
 		EXTI->PR |= 1<<11;
-	}
+	}*/
 }

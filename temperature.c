@@ -1,5 +1,5 @@
 #include <stm32f10x.h>
-#include "prj.h"
+#include "prj_tx.h"
 
 extern u8** font8x8;
 extern u8 rawdata[];
@@ -71,7 +71,7 @@ void TIM4_IRQHandler (void){
 		if(temp_conv < 0) temp_conv = 0;
 		temp_conv_10 = temp_conv/10;		//tens of temp.
 		temp_conv_1 = temp_conv%10;		//units of temp.
-		display_mnC (temp_conv_10, temp_conv_1, temp_mode);
+		//display_mnC (temp_conv_10, temp_conv_1, temp_mode);
 		TIM4->SR &= ~(1<<0);		//clear UIF
 	}
 }

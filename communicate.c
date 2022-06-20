@@ -1,5 +1,5 @@
 #include <stm32f10x.h>
-#include "prj.h"
+#include "prj_tx.h"
 
 /* APB1 : 36MHz */
 /* PB10 USART3_TX */
