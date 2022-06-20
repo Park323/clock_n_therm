@@ -9,7 +9,7 @@ Make it do not wait for input, we may use EXTI... refer to chapter 8 - discussio
 extern u8 CLKEN;
 extern u8 CLK_CONFIG;
 extern u8 H24;
-extern u32 temp_mode;
+extern u8 temp_mode;
 extern u8 no_input;
 extern u8 flash;
 
@@ -18,7 +18,6 @@ u8 key_index, pressed;
 u8 scroll_mode = 0;
 u32 key_row, key_col;
 volatile u32 delay = 0;
-
 
 void enable_EXTI(void){
 	// external interrupt
@@ -174,6 +173,7 @@ void scan_button(u8 col_num){
 			}
 			sleep();
 			debug++;
+			WRITE_TO_FLASH();
 			break;
 		}
 		key_index = key_index + 4;
@@ -216,7 +216,7 @@ void enable_TIM2(void){
 	// 1 = 36MHz / (7200)*(5000)
 	// 0.1 = 36MHz / (7200)*(50000)
 	TIM2->PSC = 0x1c1f;
-	TIM2->ARR = 0x1387;
+	TIM2->ARR = 0x3e7;
 	
 	TIM2->DIER |= 1; // enable update interrupt
 	NVIC->ISER[0] |= 1 << 28; // TIM2 global interrupt
@@ -227,4 +227,66 @@ void TIM2_IRQHandler (void){
 		delay++;
 		TIM2->SR &= ~(1<<0); // clear UIF
 	}
+}
+
+void WRITE_TO_FLASH(void){
+	// INPUT KEY
+	FLASH->KEYR = 0x45670123;
+	FLASH->KEYR = 0xCDEF89AB;
+	//	check busy
+	while((FLASH->SR & 0x0001) != 0) {}
+	FLASH->CR |= 0x02; //page erase
+	FLASH->AR = HOUR24;
+	FLASH->CR |= 0x40;// STRT
+	
+	// INPUT KEY
+	FLASH->KEYR = 0x45670123;
+	FLASH->KEYR = 0xCDEF89AB;
+	//	check busy
+	while((FLASH->SR & 0x0001) != 0) {}
+	FLASH->CR = 0x01;
+	// Do something
+	*((u16 *)HOUR24) = H24;
+	while((FLASH->SR & 0x0001) != 0) {}
+	*((u16 *)TMPMODE) = temp_mode;
+	while((FLASH->SR & 0x0001) != 0) {}
+	*((u16 *)SCROLL) = scroll_mode;
+	while((FLASH->SR & 0x0001) != 0) {}
+	// LOCK
+	FLASH->CR = 0x80;
+}
+
+void READ_FLASH(void){
+	if (*(u16*)HOUR24 != 0xFF)
+		H24 = (u8)*(u16*)HOUR24;
+	if (*(u16*)TMPMODE != 0xFF)
+		temp_mode = (u8)*(u16*)TMPMODE;
+	if (*(u16*)SCROLL != 0xFF)
+		scroll_mode = (u8)*(u16*)SCROLL;
+	/*
+	// INPUT KEY
+	FLASH->KEYR = 0x45670123;
+	FLASH->KEYR = 0xCDEF89AB;
+	//	check busy
+	while((FLASH->SR & 0x0001) != 0) {}
+	FLASH->CR |= 0x02; //page erase
+	FLASH->AR = HOUR24;
+	FLASH->CR |= 0x40;// STRT
+	
+	// INPUT KEY
+	FLASH->KEYR = 0x45670123;
+	FLASH->KEYR = 0xCDEF89AB;
+	//	check busy
+	while((FLASH->SR & 0x0001) != 0) {}
+	FLASH->CR = 0x01;
+	// Do something
+	*((u16 *)HOUR24) = H24;
+	while((FLASH->SR & 0x0001) != 0) {}
+	*((u16 *)TMPMODE) = temp_mode;
+	while((FLASH->SR & 0x0001) != 0) {}
+	*((u16 *)SCROLL) = scroll_mode;
+	while((FLASH->SR & 0x0001) != 0) {}
+	// LOCK
+	FLASH->CR = 0x80;
+	*/
 }

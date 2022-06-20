@@ -5,7 +5,7 @@ extern u8** font8x8;
 extern u8 rawdata[];
 
 u16 cur_TMP;
-u32 i, temp_mode;
+u8 i, temp_mode;
 
 u8 temp_conv, temp_conv_10, temp_conv_1;
 
