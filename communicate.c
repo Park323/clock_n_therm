@@ -10,10 +10,10 @@ extern u8 CLKEN, CLK_CONFIG;
 extern u8 hour_d, min, sec;
 extern u8 temp_conv_10, temp_conv_1, temp_mode;
 
-u8 num_words = 8;
 u8 word_idx = 0;
 
 void enable_Tx(void){
+	RCC->APB1ENR |= 0x00040000; //RCC
 	RCC->APB2ENR |= 0x00000008; //GPIOB clock enable
 	GPIOB->CRH &= ~(0xFFu << 4*2); //PB10 mode reset
 	GPIOB->CRH |= (0x04B << 4*2);	//PB10 : AF output pushpull

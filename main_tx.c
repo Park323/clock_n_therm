@@ -17,6 +17,7 @@ int main(){
 	//Mr.park fighting!!
 	//yeah~
 	
+	enable_TIM2();
 	enable_keypad();
 	
 	enable_clk();
@@ -28,5 +29,9 @@ int main(){
 	enable_Tx();
 	
 	/* Loop waiting for interrupt */
-	while(1){ __WFI(); }
+	while (1) {
+		for (u8 i=0; i<4; i++)
+			scan_button(i);
+	}
+	//while(1){ __WFI(); }
 }
