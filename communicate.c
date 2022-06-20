@@ -15,22 +15,24 @@ u8 word_idx = 0;
 void enable_Tx(void){
 	RCC->APB1ENR |= 0x00040000; //RCC
 	RCC->APB2ENR |= 0x00000008; //GPIOB clock enable
-	GPIOB->CRH &= ~(0xFFu << 4*2); //PB10 mode reset
-	GPIOB->CRH |= (0x04B << 4*2);	//PB10 : AF output pushpull
+	GPIOB->CRH &= ~(0xFu << 4*2); //PB10 mode reset
+	GPIOB->CRH |= (0xB << 4*2);	//PB10 : AF output pushpull
 	
-	USART3->BRR = 0x753;	//baudrate = 19200
+	USART3->BRR = 0x753; //baudrate = 19200
+	USART3->CR1 = 0x00000000;
+	USART3->CR2 = 0x00000000;
+	USART3->CR3 = 0x00000000;
+	USART3->CR1 |= 0x00000008; //TE bit
+	USART3->CR1 |= 0x00002000; //UE bit
 	
 	NVIC->ISER[1] |= (1<<7); //USART3 global interrupt enable
 	
-	USART3->CR1 |= 0x0088; //TXEIE, TE bit
-	USART3->CR2 |= 0x0000;
-	USART3->CR3 |= 0x0000;
-	USART3->CR1 |= 0x2000; //UE bit
+	USART3->CR1 |= 0x00000080; //TXEIE bit
 }
 
 
 void USART3_IRQHandler (void) {
-	if(USART3->SR & 80){
+	if(USART3->SR & 0x80){
 		switch (word_idx){
 			case 0 :
 				USART3->DR = scroll_mode;
