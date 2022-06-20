@@ -64,7 +64,9 @@ void USART3_IRQHandler (void) {
 			case 9 :
 				USART3->DR = HMS;
 				break;
+			case 10:
+				USART3->DR = 0xEE;
 		}
-		if (++word_idx == 10) word_idx = 0; 
+		if (++word_idx == 11) word_idx = 0; 
 	}
 }

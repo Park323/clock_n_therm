@@ -132,41 +132,41 @@ void horizon2vertical(void) {
 void enable_dot_matrix(){
 	/* reference : Program 11.1
 	 row :: pin :: port
-		1			9			PB8
-		2			14		PB9
-		3			8			PB10
-		4			12		PB11
-		5			1			PB12
-		6			7			PB13
-		7			2			PB14
-		8			5			PB15
+		1			9			PC0
+		2			14		PC1
+		3			8			PC2
+		4			12		PC3
+		5			1			PC4
+		6			7			PC5
+		7			2			PC6
+		8			5			PC7
 #1_col :: pin :: port
-		1			13		PC7
-	  2			3			PC6
-	  3			4			PC5
-	  4			10		PC4
-	  5			6			PC3
-	  6			11		PC2
-	  7			15		PC1
-	  8			16		PC0 
+		1			13		PB15
+	  2			3			PB14
+	  3			4			PB13
+	  4			10		PB12
+	  5			6			PB11
+	  6			11		PB10
+	  7			15		PB9
+	  8			16		PB8 
 #2_col :: pin :: port
-		9			13		PA15
-	  10		3			PA14
-	  11		4			PA13
-	  12		10		PA12
-	  13		6			PA11
-	  14		11		PA10
-	  15		15		PA9
-	  16		16		PA8 
+		9			13		PB7
+	  10		3			PB6
+	  11		4			PB5
+	  12		10		PB4
+	  13		6			PB3
+	  14		11		PB2
+	  15		15		PB1
+	  16		16		PB0 
 */
 	
 	// enable port B,C(3,4) & AFIO(0)
 	RCC->APB2ENR |= 0x0000001D;
 	// set ports for output mode
-//AFIO->MAPR = 0x04000000;
+	//AFIO->MAPR |= 0x04000000;
 	GPIOC->CRL = 0x33333333;
 	GPIOB->CRH = 0x33333333;
-	GPIOA->CRH = 0x33333333;
+	GPIOB->CRL = 0x33333333;
 	
 	enable_TIM2(); //use timer for dot matrix output
 }
@@ -259,12 +259,7 @@ void TIM2_IRQHandler (void){
 				}
 			}
 		}
-		temp =(display[p]>>8);
-		GPIOA->BSRR = 0xFF000000;
-		GPIOA->BSRR = temp<<8;
-		p++;
-		if (p==8) p=0;
-		GPIOB->ODR = (~display_row)<<8;
+		GPIOC->ODR = (~display_row);
 		display_row = display_row<<1;
 		if (display_row == 0x100) display_row =1;
 		TIM2->SR &= ~(1<<0); // clear UIF
