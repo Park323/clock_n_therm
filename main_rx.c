@@ -15,7 +15,7 @@ then display the information on dot matrix
 
 int main(){
 	enable_dot_matrix();
-	
+	enable_Rx();
 	activate_display();
 	enable_TIM1();
 	

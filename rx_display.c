@@ -16,6 +16,8 @@ u32 update_counter=0;
 u8 display_length = 16;
 u32 display_row = 1;
 u8 show=1;
+int p=0;
+u16 temp;
 
 // Data information to display. 
 u8 font8x8[16][8]={
@@ -148,21 +150,23 @@ void enable_dot_matrix(){
 	  7			15		PC1
 	  8			16		PC0 
 #2_col :: pin :: port
-		9			13		PC15
-	  10		3			PC14
-	  11		4			PC13
-	  12		10		PC12
-	  13		6			PC11
-	  14		11		PC10
-	  15		15		PC9
-	  16		16		PC8 
+		9			13		PA15
+	  10		3			PA14
+	  11		4			PA13
+	  12		10		PA12
+	  13		6			PA11
+	  14		11		PA10
+	  15		15		PA9
+	  16		16		PA8 
 */
 	
 	// enable port B,C(3,4) & AFIO(0)
-	RCC->APB2ENR |= 0x00000019;
+	RCC->APB2ENR |= 0x0000001D;
 	// set ports for output mode
+//AFIO->MAPR = 0x04000000;
 	GPIOC->CRL = 0x33333333;
 	GPIOB->CRH = 0x33333333;
+	GPIOA->CRH = 0x33333333;
 	
 	enable_TIM2(); //use timer for dot matrix output
 }
@@ -255,6 +259,11 @@ void TIM2_IRQHandler (void){
 				}
 			}
 		}
+		temp =(display[p]>>8);
+		GPIOA->BSRR = 0xFF000000;
+		GPIOA->BSRR = temp<<8;
+		p++;
+		if (p==8) p=0;
 		GPIOB->ODR = (~display_row)<<8;
 		display_row = display_row<<1;
 		if (display_row == 0x100) display_row =1;
@@ -282,7 +291,7 @@ void enable_TIM1(void) {
 
 void TIM1_UP_IRQHandler (void) {
 	if ((TIM1->SR & 0001) != 0) {	//UIF check
-		if (CLKEN == 1) display_hhmmss(hour, min, sec, show);
+		if (CLKEN == 1) display_hhmmss(hour, min, sec);
 		else display_mnC(temp_conv_10, temp_conv_1, temp_mode);
 		TIM1->SR &= ~(1<<0); //clear UIF
 	}
