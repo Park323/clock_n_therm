@@ -1,7 +1,7 @@
 #include <stm32f10x.h>
 #ifndef DEF_HEADER    // include guard
 #define DEF_HEADER    // prevents the file from being included twice.
-#define MATRIX_COL		0x4001100C
+#define MATRIX_COL		0x40010C0C
 #define ADC1_DR_BASE 	0x4001244C
 
 

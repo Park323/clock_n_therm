@@ -14,16 +14,19 @@ u8 temp_conv_10, temp_conv_1, temp_mode;
 
 u8 num_words = 8;
 u8 word_idx = 0;
+u8 transmit_status;
 
 
 void enable_Rx(void){
 	RCC->APB2ENR |= 0x00004004; //GPIOA clock enable
-	AFIO->MAPR |= 0x0000004;
+	GPIOA->CRH |= 0x000B0400;	//PA10 input, PA12(RTS) output
+//	AFIO->MAPR |= 0x0000004;
 	
 	USART1->BRR = 0xEA6;	//baudrate = 19200
 	
 	NVIC->ISER[1] |= (1<<5); //USART2 global interrupt enable
 	USART1->CR1 |= 0x00000020; // RXNEIE bit set
+	USART1->CR3 |= 0x00000100; // RTS mode enable
 	
 	USART1->CR1 |= 0x00000004; //RE bit
 	USART1->CR1 |= 0x00002000; //UE set
@@ -32,38 +35,44 @@ void enable_Rx(void){
 
 void USART1_IRQHandler (void) {
 	if(USART1->SR & 0x20){
-		switch (word_idx){
-			case 0 :
+		if (USART1->DR == 0xEE) {
+			word_idx = 0;
+			transmit_status = 1;
+		}
+		if (transmit_status == 1) {
+			switch (word_idx){
+			case 1 :
 				scroll_mode = USART1->DR;
 				break;
-			case 1 :
+			case 2 :
 				CLKEN = USART1->DR;
 				break;
-			case 2 :
+			case 3 :
 				hour = USART1->DR; // hour_d? it's good.
 				break;
-			case 3 :
+			case 4 :
 				min = USART1->DR;
 				break;
-			case 4 :
+			case 5 :
 				sec = USART1->DR;
 				break;
-			case 5 :
+			case 6 :
 				temp_conv_10 = USART1->DR;
 				break;
-			case 6 :
+			case 7 :
 				temp_conv_1 = USART1->DR;
 				break;
-			case 7 :
+			case 8 :
 				temp_mode = USART1->DR;
 				break;
-			case 8 :
+			case 9 :
 				CLK_CONFIG = USART1->DR;
 				break;
-			case 9 :
+			case 10 :
 				HMS = USART1->DR;
 				break;
+			}
 		}
-		if (++word_idx == 10) word_idx = 0; 
+	word_idx++;
 	}
 }
